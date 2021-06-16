@@ -1,0 +1,107 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description:
+  This is a template of how to start ClientVPN from the official AWS documentation.
+  https://docs.aws.amazon.com/ja_jp/vpn/latest/clientvpn-admin/cvpn-getting-started.html
+
+Parameters:
+  ServerCertificateARN:
+    Type: String
+    Default: "arn:aws:acm:ap-northeast-1:{AWSAccountID}:certificate/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  ClientCertificateARN:
+    Type: String
+    Default: "arn:aws:acm:ap-northeast-1:{AWSAccountID}:certificate/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  ClientCIDR:
+    Type: String
+    Description: "Enter the CIDR block. Specify with xxx.xxx.xxx.x/22"
+    Default: "10.0.0.0/22"
+  VPCID:
+    Type: "AWS::EC2::VPC::Id"
+    Description: Select at your VPC.
+  SubnetID1:
+    Type: "AWS::EC2::Subnet::Id"
+    Description: Select at private subnet in your selected VPC.
+  SubnetID2:
+    Type: "AWS::EC2::Subnet::Id"
+    Description: Select at private subnet in your selected VPC.
+
+Resources:
+  ClientVpnEndpoint: 
+    Type: AWS::EC2::ClientVpnEndpoint
+    Properties: 
+      Description: "Client VPN Endpoint."
+      # クライアント認証の形式
+      AuthenticationOptions: 
+        - Type: certificate-authentication
+          MutualAuthentication:
+            ClientRootCertificateChainArn: !Ref ClientCertificateARN
+      # ClientVPNのCIDR
+      ClientCidrBlock: !Ref ClientCIDR
+      # ログの設定
+      ConnectionLogOptions: 
+        Enabled: true
+        CloudwatchLogGroup: !Ref LogGroup
+      # ClientVPNに関連付けるセキュリティグループ
+      SecurityGroupIds: 
+        - !Ref VpnSecurityGroup
+      # コマンドで作成したサーバー証明書
+      ServerCertificateArn: !Ref ServerCertificateARN
+      # 全ての通信がClientVPN経由にならないように制御する(0.0.0.0/0のルートテーブルも無視する)
+      SplitTunnel: true
+      # VPNで使用するトランスポートプロトコル
+      TransportProtocol: udp
+      # 対象のVPC
+      VpcId: !Ref VPCID
+      # VPNで利用するポート番号(443 or 1194)
+      VpnPort: 1194
+
+  # アソシエーションの追加
+  NetworkAssociation1:
+    Type: "AWS::EC2::ClientVpnTargetNetworkAssociation"
+    Properties:
+      ClientVpnEndpointId: !Ref ClientVpnEndpoint
+      SubnetId: 
+        Ref: SubnetID1
+  NetworkAssociation2:
+    Type: "AWS::EC2::ClientVpnTargetNetworkAssociation"
+    Properties:
+      ClientVpnEndpointId: !Ref ClientVpnEndpoint
+      SubnetId: 
+        Ref: SubnetID2
+
+  # 認証設定の追加
+  AuthRule:
+    Type: "AWS::EC2::ClientVpnAuthorizationRule"
+    Properties:
+      ClientVpnEndpointId: !Ref ClientVpnEndpoint
+      # 全ての認証を許可する
+      AuthorizeAllGroups: true
+      TargetNetworkCidr: "0.0.0.0/0"
+      Description: "Authoriza All Access."
+
+  # ロググループの作成
+  LogGroup: 
+    Type: AWS::Logs::LogGroup
+    Properties: 
+      RetentionInDays: 365
+
+  # セキュリティグループの作成
+  VpnSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: client-vpn
+      GroupDescription: client-vpn
+      VpcId: !Ref VPCID
+      Tags:
+        - Key: Name
+          Value: client-vpn
+
+# 別のスタックで利用するためにOutputしておく
+Outputs:
+  ClientVpnEndpoint:
+    Value: !Ref ClientVpnEndpoint
+    Export:
+      Name: ClientVpnEndpoint
+  VpnSecurityGroup:
+    Value: !Ref VpnSecurityGroup
+    Export:
+      Name: VpnSecurityGroup
