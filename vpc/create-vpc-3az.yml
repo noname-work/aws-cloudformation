@@ -99,7 +99,7 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties: 
       AvailabilityZone: "ap-northeast-1d"
-      CidrBlock: !Ref PublicSubnetCCidrBlock
+      CidrBlock: !Ref PublicSubnetDCidrBlock
       Tags: 
         - Key: Name
           Value: Public-SubnetD
