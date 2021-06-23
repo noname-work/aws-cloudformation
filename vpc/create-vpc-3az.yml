@@ -1,0 +1,293 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description:
+  Create a VPC and PublicSubnet and PrivateSubnet.
+  These will be created in each of the 3 availability zones.
+
+Parameters:
+  VPCCidrBlock:
+    Type: String
+    Description: "Specify the CIDR range of the VPC."
+    Default: "10.0.0.0/22"
+  PublicSubnetACidrBlock:
+    Type: String
+    Description: "Specify the CIDR range of the Public Subnet for AZ-a."
+    Default: "10.0.0.0/25"
+  PublicSubnetCCidrBlock:
+    Type: String
+    Description: "Specify the CIDR range of the Public Subnet for AZ-c."
+    Default: "10.0.0.128/25"
+  PublicSubnetDCidrBlock:
+    Type: String
+    Description: "Specify the CIDR range of the Public Subnet for AZ-d."
+    Default: "10.0.1.0/25"
+  PrivateSubnetACidrBlock:
+    Type: String
+    Description: "Specify the CIDR range of the Private Subnet for AZ-a."
+    Default: "10.0.1.128/25"
+  PrivateSubnetCCidrBlock:
+    Type: String
+    Description: "Specify the CIDR range of the Private Subnet for AZ-c."
+    Default: "10.0.2.0/25"
+  PrivateSubnetDCidrBlock:
+    Type: String
+    Description: "Specify the CIDR range of the Private Subnet for AZ-d."
+    Default: "10.0.2.128/25"
+
+
+Resources:
+  # VPCの作成
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties: 
+      CidrBlock: !Ref VPCCidrBlock
+      # VPC内のEC2インスタンスにデフォルトでDNSを割り当てる
+      EnableDnsHostnames: true
+      # VPC内でAWS提供のDNSサービスを受けるか
+      EnableDnsSupport: true
+      # VPC内のEC2インスタンスを共有インスタンスにする
+      InstanceTenancy: "default"
+      Tags: 
+        - Key: Name
+          Value: Main-VPC
+
+  # インターネットゲートウェイの作成
+  IGW:
+    Type: AWS::EC2::InternetGateway
+    Properties: 
+      Tags: 
+        - Key: Name
+          Value: Main-VPC-IGW
+
+  # IGWをVPCへアタッチ
+  AttachIGW:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: 
+      # アタッチするインターネットゲートウェイの指定
+      InternetGatewayId: !Ref IGW
+      # アタッチ先のVPCの指定
+      VpcId: !Ref VPC
+
+
+# ====================================
+#         Public-Subnetの構築
+# ====================================
+
+  # アベイラビリティゾーンAのパブリックサブネット
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties: 
+      AvailabilityZone: "ap-northeast-1a"
+      CidrBlock: !Ref PublicSubnetACidrBlock
+      Tags: 
+        - Key: Name
+          Value: Public-SubnetA
+      VpcId: !Ref VPC
+
+  # アベイラビリティゾーンCのパブリックサブネット
+  PublicSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties: 
+      AvailabilityZone: "ap-northeast-1c"
+      CidrBlock: !Ref PublicSubnetCCidrBlock
+      Tags: 
+        - Key: Name
+          Value: Public-SubnetC
+      VpcId: !Ref VPC
+
+  # アベイラビリティゾーンDのパブリックサブネット
+  PublicSubnetD:
+    Type: AWS::EC2::Subnet
+    Properties: 
+      AvailabilityZone: "ap-northeast-1d"
+      CidrBlock: !Ref PublicSubnetCCidrBlock
+      Tags: 
+        - Key: Name
+          Value: Public-SubnetD
+      VpcId: !Ref VPC
+
+  # Public-Subnet共通のルートテーブル
+  PublicRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Public-Subnet
+
+  # Public-SubnetのルートテーブルにIGWを追加
+  AttachPublicRouteIGW:
+    Type: "AWS::EC2::Route"
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref IGW
+
+  # Public-SubnetAとそれ用のルートテーブルを関連付ける
+  AtacchPublicSubnetRouteA:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId: !Ref PublicRouteTable
+
+  # Public-SubnetCとそれ用のルートテーブルを関連付ける
+  AtacchPublicSubnetRouteC:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PublicSubnetC
+      RouteTableId: !Ref PublicRouteTable
+
+  # Public-SubnetDとそれ用のルートテーブルを関連付ける
+  AtacchPublicSubnetRouteD:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PublicSubnetD
+      RouteTableId: !Ref PublicRouteTable
+
+# ====================================
+#         Private-Subnetの構築
+# ====================================
+
+  # アベイラビリティゾーンAのプライベートサブネット
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties: 
+      AvailabilityZone: "ap-northeast-1a"
+      CidrBlock: !Ref PrivateSubnetACidrBlock
+      Tags: 
+        - Key: Name
+          Value: Private-SubnetA
+      VpcId: !Ref VPC
+
+  # アベイラビリティゾーンCのプライベートサブネット
+  PrivateSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties: 
+      AvailabilityZone: "ap-northeast-1c"
+      CidrBlock: !Ref PrivateSubnetCCidrBlock
+      Tags: 
+        - Key: Name
+          Value: Private-SubnetC
+      VpcId: !Ref VPC
+
+  # アベイラビリティゾーンDのプライベートサブネット
+  PrivateSubnetD:
+    Type: AWS::EC2::Subnet
+    Properties: 
+      AvailabilityZone: "ap-northeast-1d"
+      CidrBlock: !Ref PrivateSubnetDCidrBlock
+      Tags: 
+        - Key: Name
+          Value: Private-SubnetD
+      VpcId: !Ref VPC
+
+  # Private-SubnetAで利用するNATゲートウェイのIP
+  PrivateANatElasticIP:
+    Type: "AWS::EC2::EIP"
+    Properties:
+      Domain: "vpc"
+
+  # Private-SubnetCで利用するNATゲートウェイのIP
+  PrivateCNatElasticIP:
+    Type: "AWS::EC2::EIP"
+    Properties:
+      Domain: "vpc"
+
+  # Private-SubnetDで利用するNATゲートウェイのIP
+  PrivateDNatElasticIP:
+    Type: "AWS::EC2::EIP"
+    Properties:
+      Domain: "vpc"
+
+  # Private-SubnetAで利用するNATゲートウェイ
+  NATGatewayA:
+    Type: "AWS::EC2::NatGateway"
+    Properties:
+      AllocationId: !GetAtt PrivateANatElasticIP.AllocationId
+      # 勘違いしがちだがNATゲートウェイはパブリックなサブネットに紐づける
+      SubnetId: !Ref PublicSubnetA
+
+  # Private-SubnetCで利用するNATゲートウェイ
+  NATGatewayC:
+    Type: "AWS::EC2::NatGateway"
+    Properties:
+      AllocationId: !GetAtt PrivateCNatElasticIP.AllocationId
+      SubnetId: !Ref PublicSubnetC
+
+  # Private-SubnetDで利用するNATゲートウェイ
+  NATGatewayD:
+    Type: "AWS::EC2::NatGateway"
+    Properties:
+      AllocationId: !GetAtt PrivateDNatElasticIP.AllocationId
+      SubnetId: !Ref PublicSubnetD
+
+  # Private-SubnetAのルートテーブル
+  PrivateARouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Private-SubnetA
+
+  # Private-SubnetCのルートテーブル
+  PrivateCRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Private-SubnetC
+
+  # Private-SubnetDのルートテーブル
+  PrivateDRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Private-SubnetD
+
+  # Private-SubnetAのルートテーブルにNATゲートウェイを追加
+  AttachPrivateATRouteNAT:
+    Type: "AWS::EC2::Route"
+    Properties:
+      RouteTableId: !Ref PrivateARouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      NatGatewayId: !Ref NATGatewayA
+
+  # Private-SubnetCのルートテーブルにNATゲートウェイを追加
+  AttachPrivateCRouteNAT:
+    Type: "AWS::EC2::Route"
+    Properties:
+      RouteTableId: !Ref PrivateCRouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      NatGatewayId: !Ref NATGatewayC
+
+  # Private-SubnetDのルートテーブルにNATゲートウェイを追加
+  AttachPrivateDRouteNAT:
+    Type: "AWS::EC2::Route"
+    Properties:
+      RouteTableId: !Ref PrivateDRouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      NatGatewayId: !Ref NATGatewayD
+
+  # Private-SubnetAとそれ用のルートテーブルを関連付ける
+  AtacchPrivateSubnetRouteA:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PrivateSubnetA
+      RouteTableId: !Ref PrivateARouteTable
+
+  # Private-SubnetCとそれ用のルートテーブルを関連付ける
+  AtacchPrivateSubnetRouteC:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PrivateSubnetC
+      RouteTableId: !Ref PrivateCRouteTable
+
+  # Private-SubnetDとそれ用のルートテーブルを関連付ける
+  AtacchPrivateSubnetRouteD:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PrivateSubnetD
+      RouteTableId: !Ref PrivateDRouteTable
