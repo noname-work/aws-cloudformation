@@ -5,10 +5,10 @@
 - ap-northeast-1で実行する想定で作成しました。
 
 # ファイル説明
-create-vpc-2az.yml:
+**create-vpc-2az.yml**:<br>
 2つのアベイラビリティゾーン(a/c)にそれぞれサブネットを作成するテンプレート。
 
-create-vpc-3az.yml:
+**create-vpc-3az.yml**:<br>
 3つのアベイラビリティゾーン(a/c/d)にそれぞれサブネットを作成するテンプレート。
 
 ## パラメータ
