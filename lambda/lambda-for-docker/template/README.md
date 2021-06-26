@@ -1,7 +1,7 @@
 ## 構成図
 <img src="https://noname.work/wp-content/uploads/2021/06/%E6%A7%8B%E6%88%90-1.png" width="400">
 CloudWatchEventsによる定期実行設定とLambda実行用のIAMロール、<br>
-ECRリポジトリから取得したコンテナイメージからLambdaを構築します。
+ECRリポジトリから取得したコンテナイメージからLambdaを構築する。
 
 ## 構築の流れ
 1, ecr-repo-create.ymlテンプレートでECRリポジトリを作成する<br>
