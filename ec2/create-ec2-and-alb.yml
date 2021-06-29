@@ -3,6 +3,9 @@ Description:
   This template will create a web server that only allows https.
 
 Parameters:
+  ServiceName:
+    Description: Name of the EC2 instance. Related services will be named in the same way.
+    Default: "web-server"
   InstanceType:
     Type: String
     Description: Allowed EC2 instance type.
@@ -40,8 +43,7 @@ Resources:
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      # 明示的な名前をつけない場合はコメントアウトしておく(ユニークな名前になる)
-      #GroupName: ALB-SG
+      GroupName: !Sub ${ServiceName}-alb-sg
       GroupDescription: Allow port 80 and port 443.
       VpcId: !Ref VPCID
       # ALBは80ポートと443ポートを開放しておく
@@ -57,11 +59,11 @@ Resources:
       # タグに名前を入れておく
       Tags:
         - Key: Name
-          Value: ALB-SG
+          Value: !Sub ${ServiceName}-alb-sg
   EC2SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      #GroupName: EC2-SG
+      GroupName: !Sub ${ServiceName}-ec2-sg
       GroupDescription: Allow access from ALB and SSH only.
       VpcId: !Ref VPCID
       # EC2へのアクセスはALBのセキュリティグループとsshアクセス用の許可を設定
@@ -77,7 +79,7 @@ Resources:
           CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
-          Value: EC2-SG
+          Value: !Sub ${ServiceName}-ec2-sg
 
   # EC2インスタンスの作成
   EC2Instance:
@@ -109,20 +111,19 @@ Resources:
            systemctl enable httpd.service
       Tags:
         - Key: Name
-          Value: Web-Server
+          Value: !Ref ServiceName
 
   # ALBの作成
   ApplicationLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties: 
-      # 明示的な名前をつけない場合はコメントアウトしておく(ユニークな名前になる)
-      #Name: Web-ALB
+      Name: !Sub ${ServiceName}-alb
       SecurityGroups: 
         - !Ref ALBSecurityGroup
       Subnets: !Ref ALBSubnetIDs
       Tags: 
         - Key: Name
-          Value: Web-ALB
+          Value: !Sub ${ServiceName}-alb
       Type: application
 
 
@@ -130,8 +131,7 @@ Resources:
   ALBTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      # 明示的な名前をつけない場合はコメントアウトしておく(ユニークな名前になる)
-      #Name: Web-TG
+      Name: !Sub ${ServiceName}-tg
       # ヘルスチェックを有効にする
       HealthCheckEnabled: true
       # ヘルスチェックの実行間隔
@@ -155,7 +155,7 @@ Resources:
       VpcId: !Ref VPCID
       Tags: 
         - Key: Name
-          Value: Web-TG
+          Value: !Sub ${ServiceName}-tg
 
   # HTTP通信のリスナー設定  
   HTTPListener:
