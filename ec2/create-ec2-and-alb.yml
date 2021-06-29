@@ -4,6 +4,7 @@ Description:
 
 Parameters:
   ServiceName:
+    Type: String
     Description: Name of the EC2 instance. Related services will be named in the same way.
     Default: "web-server"
   InstanceType:
