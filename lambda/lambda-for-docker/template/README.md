@@ -7,15 +7,15 @@ ECRリポジトリから取得したコンテナイメージからLambdaを構�
 1, ecr-repo-create.ymlテンプレートでECRリポジトリを作成する<br>
 2, [sourceディレクトリ](../source)内でDockerイメージをビルドする<br>
 3, ECRにDockerイメージをpushする<br>
-4, lambda-for-docker.ymlテンプレートでLambdaを構築
+4, create-lambda-for-docker.ymlテンプレートでLambdaを構築
 
 
 ## ファイル説明
-**ecr-repo-create.yml:**<br>
+**create-ecr-repo.yml:**<br>
 Lambda用のdockerイメージを格納するECRリポジトリを作成するテンプレート。<br>
 パラメータなし。
 
-**lambda-for-docker.yml:**<br>
+**create-lambda-for-docker.yml:**<br>
 DockerイメージからLambdaを作成し、定期実行の設定を行うテンプレート。
 
 ## パラメータ
