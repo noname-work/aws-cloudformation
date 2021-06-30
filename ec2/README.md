@@ -13,6 +13,7 @@
 
 | Parameter | Description |
 |:---|:---|
+| ServiceName | EC2インスタンスの名前。関連リソースの名前も同様の名前が入る |
 | InstanceType | 起動するEC2インスタンスのタイプをリストから選択。デフォルトはt2.micro |
 | VPCID | ALBとEC2を起動するVPCを選択 |
 | EC2SubnetID | EC2を実行するサブネットを選択。安全のためにPrivateサブネットでの起動を推奨 |
