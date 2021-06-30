@@ -4,8 +4,15 @@ Description:
 
 Parameters:
   ClusterName:
+    Type: String
     Description: "Enter the name of the ECS Cluster."
     Default: "sample-ecs-cluster"
+  ALBSubnetIDs:
+    Type: "List<AWS::EC2::Subnet::Id>"
+    Description: Select a subnet from two or more availability-zones.
+  InstanceType:
+    Description: "hogehoge."
+    Default: "ami-xxxxxx"
 
 Resources:
   # ECSクラスターの作成
@@ -15,9 +22,84 @@ Resources:
       ClusterName: !Ref ClusterName
       # ContainerInsightsを利用する設定。追加料金が発生するが細かなメトリクスを確認できる。
       ClusterSettings: 
-        Name: containerInsights
-        # 詳細な監視が必要な場合はenabledにしておく
-        Value: disabled
+        - Name: containerInsights
+          # 詳細な監視が必要な場合はenabledにしておく
+          Value: disabled
       Tags: 
         - Key: Name
           Value: !Ref ClusterName
+
+#  # AutoScalingグループの作成
+#  AutoScaling:
+#    Type: AWS::AutoScaling::AutoScalingGroup
+#    Properties: 
+#      AutoScalingGroupName: !Ref LaunchConfiguration
+#      AvailabilityZones: 
+#        - String
+#      CapacityRebalance: Boolean
+#      Cooldown: String
+#      DesiredCapacity: String
+#      HealthCheckGracePeriod: Integer
+#      HealthCheckType: String
+#      InstanceId: String
+#      LaunchConfigurationName: String
+#      LaunchTemplate: 
+#        LaunchTemplateSpecification
+#      LifecycleHookSpecificationList: 
+#        - LifecycleHookSpecification
+#      LoadBalancerNames: 
+#        - String
+#      MaxInstanceLifetime: Integer
+#      MaxSize: String
+#      MetricsCollection: 
+#        - MetricsCollection
+#      MinSize: String
+#      MixedInstancesPolicy: 
+#        MixedInstancesPolicy
+#      NewInstancesProtectedFromScaleIn: Boolean
+#      NotificationConfigurations: 
+#        - NotificationConfiguration
+#      PlacementGroup: String
+#      ServiceLinkedRoleARN: String
+#      Tags: 
+#        - TagProperty
+#      TargetGroupARNs: 
+#        - String
+#      TerminationPolicies: 
+#        - String
+#      VPCZoneIdentifier: 
+#        - String
+#
+  # AutoScaling起動設定の作成
+  LaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties: 
+      # 自動にパブリックIPを割り当てるかどうか
+      AssociatePublicIpAddress: false
+      BlockDeviceMappings: 
+        - DeviceName: "/dev/sda1"
+          Ebs: 
+            VolumeType: "gp3"
+            VolumeSize: 30
+      # EBSをスループット最適化モードにするか
+      EbsOptimized: false
+      # ECSにアタッチするIAMロール
+      IamInstanceProfile: String
+      # 実行するAMI
+      ImageId: String
+      # 詳細メトリクスを有効にするか
+      InstanceMonitoring: false
+      # インスタンスタイプ
+      InstanceType: !Ref InstanceType
+      # EC2インスタンスのキーペア
+      KeyName: String
+      # 起動設定の名前
+      LaunchConfigurationName: String
+      # EC2に紐づけるセキュリティグループ
+      SecurityGroups: 
+        - String
+      # ECSクラスターに紐づけるためのユーザーデータ
+      UserData: 
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          echo "ECS_CLUSTER=${ClusterName}" >> /etc/ecs/ecs.config
