@@ -11,6 +11,18 @@ Parameters:
     Type: "List<AWS::EC2::Subnet::Id>"
     Description: Select a subnet from two or more availability-zones.
   InstanceType:
+    Description: Allowed EC2 instance type.
+    AllowedValues: [t2.nano, t2.micro, t2.small, t2.medium, t2.large, t2.xlarge, t2.2xlarge,
+      t3.nano, t3.micro, t3.small, t3.medium, t3.large, t3.xlarge, t3.2xlarge,
+      m4.large, m4.xlarge, m4.2xlarge, m4.4xlarge,
+      m5.large, m5.xlarge, m5.2xlarge, m5.4xlarge,
+      c3.large, c3.xlarge, c3.2xlarge, c3.4xlarge,
+      c4.large, c4.xlarge, c4.2xlarge, c4.4xlarge,
+      c5.large, c5.xlarge, c5.2xlarge, c5.4xlarge]
+  KeyName:
+    Type: "AWS::EC2::KeyPair::KeyName"
+    Description: Select at your EC2 KeyPair.
+  ImageId:
     Description: "hogehoge."
     Default: "ami-xxxxxx"
 
@@ -86,15 +98,15 @@ Resources:
       # ECSにアタッチするIAMロール
       IamInstanceProfile: String
       # 実行するAMI
-      ImageId: String
+      ImageId: !Ref ImageId
       # 詳細メトリクスを有効にするか
       InstanceMonitoring: false
       # インスタンスタイプ
       InstanceType: !Ref InstanceType
       # EC2インスタンスのキーペア
-      KeyName: String
+      KeyName: !Ref KeyName
       # 起動設定の名前
-      LaunchConfigurationName: String
+      LaunchConfigurationName: !Sub ${ClusterName}-launch
       # EC2に紐づけるセキュリティグループ
       SecurityGroups: 
         - String
