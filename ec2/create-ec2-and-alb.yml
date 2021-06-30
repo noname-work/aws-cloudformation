@@ -104,7 +104,7 @@ Resources:
             - !Ref EC2SecurityGroup
       # 起動時にApacheをインストールして立ち上げる例
       UserData:
-        Fn::Base64: !Sub |
+        Fn::Base64: | 
            #!/bin/bash -xe
            yum update -y 
            yum install -y httpd
