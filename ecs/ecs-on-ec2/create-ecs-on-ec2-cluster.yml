@@ -1,17 +1,15 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Description:
-  hogehoge
+  "hogehoge"
 
 Parameters:
   ClusterName:
-    Type: String
+    Type: "String"
     Description: "Enter the name of the ECS Cluster."
     Default: "sample-ecs-cluster"
-  ALBSubnetIDs:
-    Type: "List<AWS::EC2::Subnet::Id>"
-    Description: Select a subnet from two or more availability-zones.
   InstanceType:
-    Description: Allowed EC2 instance type.
+    Type: "String"
+    Description: "Allowed EC2 instance type."
     AllowedValues: [t2.nano, t2.micro, t2.small, t2.medium, t2.large, t2.xlarge, t2.2xlarge,
       t3.nano, t3.micro, t3.small, t3.medium, t3.large, t3.xlarge, t3.2xlarge,
       m4.large, m4.xlarge, m4.2xlarge, m4.4xlarge,
@@ -19,99 +17,129 @@ Parameters:
       c3.large, c3.xlarge, c3.2xlarge, c3.4xlarge,
       c4.large, c4.xlarge, c4.2xlarge, c4.4xlarge,
       c5.large, c5.xlarge, c5.2xlarge, c5.4xlarge]
+  ECSSubnetIDs:
+    Type: "List<AWS::EC2::Subnet::Id>"
+    Description: "Select a subnet from two or more availability-zones."
   KeyName:
     Type: "AWS::EC2::KeyPair::KeyName"
-    Description: Select at your EC2 KeyPair.
+    Description: "Select at your EC2 KeyPair."
   ImageId:
+    Type: "String"
     Description: "hogehoge."
-    Default: "ami-xxxxxx"
+    Default: "ami-032b1a02e6610214e"
+  SecurityGroups:
+    Type: "List<AWS::EC2::SecurityGroup::Id>"
+    Description: "hogehoge."
+  ScalingDesiredCapacity:
+    Type: "Number"
+    Description: "hogehoge."
+    Default: "1"
+  ScalingMaxSize:
+    Type: "Number"
+    Description: "hogehoge."
+    Default: "3"
+  ScalingMinSize:
+    Type: "Number"
+    Description: "hogehoge."
+    Default: "1"
 
 Resources:
   # ECSクラスターの作成
   EcsCluster:
-    Type: AWS::ECS::Cluster
+    Type: "AWS::ECS::Cluster"
     Properties: 
-      ClusterName: !Ref ClusterName
+      ClusterName: !Ref "ClusterName"
       # ContainerInsightsを利用する設定。追加料金が発生するが細かなメトリクスを確認できる。
       ClusterSettings: 
-        - Name: containerInsights
+        - Name: "containerInsights"
           # 詳細な監視が必要な場合はenabledにしておく
-          Value: disabled
+          Value: "disabled"
       Tags: 
-        - Key: Name
-          Value: !Ref ClusterName
+        - Key: "Name"
+          Value: !Ref "ClusterName"
 
-#  # AutoScalingグループの作成
-#  AutoScaling:
-#    Type: AWS::AutoScaling::AutoScalingGroup
-#    Properties: 
-#      AutoScalingGroupName: !Ref LaunchConfiguration
-#      AvailabilityZones: 
-#        - String
-#      CapacityRebalance: Boolean
-#      Cooldown: String
-#      DesiredCapacity: String
-#      HealthCheckGracePeriod: Integer
-#      HealthCheckType: String
-#      InstanceId: String
-#      LaunchConfigurationName: String
-#      LaunchTemplate: 
-#        LaunchTemplateSpecification
-#      LifecycleHookSpecificationList: 
-#        - LifecycleHookSpecification
-#      LoadBalancerNames: 
-#        - String
-#      MaxInstanceLifetime: Integer
-#      MaxSize: String
-#      MetricsCollection: 
-#        - MetricsCollection
-#      MinSize: String
-#      MixedInstancesPolicy: 
-#        MixedInstancesPolicy
-#      NewInstancesProtectedFromScaleIn: Boolean
-#      NotificationConfigurations: 
-#        - NotificationConfiguration
-#      PlacementGroup: String
-#      ServiceLinkedRoleARN: String
-#      Tags: 
-#        - TagProperty
-#      TargetGroupARNs: 
-#        - String
-#      TerminationPolicies: 
-#        - String
-#      VPCZoneIdentifier: 
-#        - String
-#
+  # AutoScalingグループの作成
+  AutoScaling:
+    DependsOn: "LaunchConfiguration"
+    Type: "AWS::AutoScaling::AutoScalingGroup"
+    Properties: 
+      AutoScalingGroupName: !Sub "${ClusterName}-asg"
+      # 次のスケーリングアクションまでの待機時間
+      Cooldown: "300"
+      # 実行するインスタンスの希望数
+      DesiredCapacity: !Ref "ScalingDesiredCapacity"
+      # インスタンスの最大数
+      MaxSize: !Ref "ScalingMaxSize"
+      # インスタンスの最小数
+      MinSize: !Ref "ScalingMinSize"
+      # インスタンスの起動設定
+      LaunchConfigurationName: !Ref "LaunchConfiguration"
+      # インスタンスを停止する時のルール
+      TerminationPolicies: 
+        - "OldestInstance"
+      VPCZoneIdentifier: !Ref "ECSSubnetIDs"
+      Tags: 
+        - Key: "Name"
+          Value: !Sub "${ClusterName}-ecs-instance"
+          PropagateAtLaunch: "true"
+
   # AutoScaling起動設定の作成
   LaunchConfiguration:
-    Type: AWS::AutoScaling::LaunchConfiguration
+    Type: "AWS::AutoScaling::LaunchConfiguration"
     Properties: 
       # 自動にパブリックIPを割り当てるかどうか
-      AssociatePublicIpAddress: false
+      AssociatePublicIpAddress: true
       BlockDeviceMappings: 
-        - DeviceName: "/dev/sda1"
+        - DeviceName: "/dev/xvda"
           Ebs: 
             VolumeType: "gp3"
-            VolumeSize: 30
+            VolumeSize: "30"
       # EBSをスループット最適化モードにするか
-      EbsOptimized: false
-      # ECSにアタッチするIAMロール
-      IamInstanceProfile: String
+      EbsOptimized: "false"
+      # ECSにアタッチするインスタンスプロファイル
+      IamInstanceProfile: !Ref "EcsInstanceProfile"
       # 実行するAMI
-      ImageId: !Ref ImageId
+      ImageId: !Ref "ImageId"
       # 詳細メトリクスを有効にするか
-      InstanceMonitoring: false
+      InstanceMonitoring: "false"
       # インスタンスタイプ
-      InstanceType: !Ref InstanceType
+      InstanceType: !Ref "InstanceType"
       # EC2インスタンスのキーペア
-      KeyName: !Ref KeyName
+      KeyName: !Ref "KeyName"
       # 起動設定の名前
-      LaunchConfigurationName: !Sub ${ClusterName}-launch
+      LaunchConfigurationName: !Sub "${ClusterName}-launch"
       # EC2に紐づけるセキュリティグループ
-      SecurityGroups: 
-        - String
+      SecurityGroups: !Ref "SecurityGroups"
       # ECSクラスターに紐づけるためのユーザーデータ
       UserData: 
         Fn::Base64: !Sub |
           #!/bin/bash
           echo "ECS_CLUSTER=${ClusterName}" >> /etc/ecs/ecs.config
+
+  # ECSで利用するためのポリシーを作成
+  EcsInstanceRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub "${ClusterName}-instance-role"
+      # ECSの基本的なポリシーとSSMを利用するためのポリシーをアタッチ
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+        - "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "ec2.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+
+  # インスタンスプロファイルの作成
+  EcsInstanceProfile:
+    Type: "AWS::IAM::InstanceProfile"
+    Properties:
+      Path: "/"
+      Roles:
+        - !Ref "EcsInstanceRole"
+      InstanceProfileName: !Sub "${ClusterName}-instance-role"
