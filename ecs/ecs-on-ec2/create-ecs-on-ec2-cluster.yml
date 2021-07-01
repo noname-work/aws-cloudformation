@@ -60,8 +60,15 @@ Resources:
 
   # AutoScalingグループの作成
   AutoScaling:
-    DependsOn: "LaunchConfiguration"
     Type: "AWS::AutoScaling::AutoScalingGroup"
+    # インスタンス更新時のアップデート設定
+    UpdatePolicy:
+      # ローリングアップデートの設定
+      AutoScalingRollingUpdate:
+        # 1台ずつ変更
+        MaxBatchSize: "1"
+        # アップデート中に最低でも1台はインスタンスが起動するようにする
+        MinInstancesInService: "1"
     Properties: 
       AutoScalingGroupName: !Sub "${ClusterName}-asg"
       # 次のスケーリングアクションまでの待機時間
@@ -106,8 +113,6 @@ Resources:
       InstanceType: !Ref "InstanceType"
       # EC2インスタンスのキーペア
       KeyName: !Ref "KeyName"
-      # 起動設定の名前
-      LaunchConfigurationName: !Sub "${ClusterName}-launch"
       # EC2に紐づけるセキュリティグループ
       SecurityGroups: !Ref "SecurityGroups"
       # ECSクラスターに紐づけるためのユーザーデータ

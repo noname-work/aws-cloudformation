@@ -1,24 +1,24 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Description:
-  hogehoge
+  "hogehoge"
 
 Parameters:
   ClusterName:
-    Type: String
+    Type: "String"
     Description: "Enter the name of the ECS Cluster."
     Default: "sample-ecs-cluster"
 
 Resources:
   # ECSクラスターの作成
   EcsCluster:
-    Type: AWS::ECS::Cluster
+    Type: "AWS::ECS::Cluster"
     Properties: 
-      ClusterName: !Ref ClusterName
+      ClusterName: !Ref "ClusterName"
       # ContainerInsightsを利用する設定。追加料金が発生するが細かなメトリクスを確認できる。
       ClusterSettings: 
-        - Name: containerInsights
+        - Name: "containerInsights"
           # 詳細な監視が必要な場合はenabledにしておく
-          Value: disabled
+          Value: "disabled"
       Tags: 
-        - Key: Name
-          Value: !Ref ClusterName
+        - Key: "Name"
+          Value: !Ref "ClusterName"
