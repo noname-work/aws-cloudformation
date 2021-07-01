@@ -25,10 +25,11 @@ Parameters:
     Default: "true"
 
 Resources:
-  # Lambdaで利用するIAMポリシーの作成
+  # Lambdaで利用するIAMロールの作成
   LambdaExecutionRole:
     Type: "AWS::IAM::Role"
     Properties:
+      # ロールにアタッチするポリシーを作成する
       Policies:
         - PolicyName: !Sub ${LambdaName}-policy
           PolicyDocument:
