@@ -1,6 +1,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description:
-  "hogehoge"
+  "Create an ECS cluster and the resources needed to run it.
+  Specifically, ECS cluster, AutoScaling, Launchtemplate, and an IAM role."
 
 Parameters:
   ClusterName:
@@ -19,28 +20,28 @@ Parameters:
       c5.large, c5.xlarge, c5.2xlarge, c5.4xlarge]
   ECSSubnetIDs:
     Type: "List<AWS::EC2::Subnet::Id>"
-    Description: "Select a subnet from two or more availability-zones."
+    Description: "Specify one or more availabilityzones in which to run host instances of ECS."
   KeyName:
     Type: "AWS::EC2::KeyPair::KeyName"
     Description: "Select at your EC2 KeyPair."
   ImageId:
     Type: "String"
-    Description: "hogehoge."
-    Default: "ami-032b1a02e6610214e"
-  SecurityGroups:
+    Description: "Specify the ECS-optimized AMI host instance."
+    Default: "ami-0f4146903324aaa5b"
+  EcsSecurityGroups:
     Type: "List<AWS::EC2::SecurityGroup::Id>"
-    Description: "hogehoge."
+    Description: "Select the security group to be used for the host instance of ECS.."
   ScalingDesiredCapacity:
     Type: "Number"
-    Description: "hogehoge."
+    Description: "Desired number of host instances for ECS clusters."
     Default: "1"
   ScalingMaxSize:
     Type: "Number"
-    Description: "hogehoge."
+    Description: "Maximum number of host instances for ECS clusters."
     Default: "3"
   ScalingMinSize:
     Type: "Number"
-    Description: "hogehoge."
+    Description: "Minimum number of host instances for ECS clusters."
     Default: "1"
 
 Resources:
@@ -114,7 +115,7 @@ Resources:
       # EC2インスタンスのキーペア
       KeyName: !Ref "KeyName"
       # EC2に紐づけるセキュリティグループ
-      SecurityGroups: !Ref "SecurityGroups"
+      SecurityGroups: !Ref "EcsSecurityGroups"
       # ECSクラスターに紐づけるためのユーザーデータ
       UserData: 
         Fn::Base64: !Sub |

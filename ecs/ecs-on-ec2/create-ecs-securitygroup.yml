@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description:
-  "hogehoge"
+  "Create a security group to be used by the ECS host instance and load balancer."
 
 Parameters:
   ClusterName:
