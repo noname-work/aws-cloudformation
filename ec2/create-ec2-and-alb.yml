@@ -127,7 +127,6 @@ Resources:
           Value: !Sub "${ServiceName}-alb"
       Type: "application"
 
-
   # ターゲットグループの作成
   ALBTargetGroup:
     Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
