@@ -18,7 +18,7 @@ Parameters:
     Default: "2"
   ImageURI:
     Type: "String"
-    Description: "立ち上げるコンテナのイメージを指定します。"
+    Description: "Specify the image of the container to be launched."
     Default: "httpd:latest"
   ContainerPort:
     Type: "Number"
