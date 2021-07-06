@@ -1,6 +1,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description:
-  "hogehoge."
+  "Create definitions for ECS services and tasks.
+  You need to prepare a Service-Linked ecsServiceRole in advance."
 
 Parameters:
   ClusterName:
@@ -13,23 +14,23 @@ Parameters:
     Default: "sample-ecs-service"
   DesiredServiceCount:
     Type: "Number"
-    Description: "hogehoge"
+    Description: "The desired number of containers for the service to run."
     Default: "2"
   ImageURI:
     Type: "String"
-    Description: "hogehoge"
+    Description: "立ち上げるコンテナのイメージを指定します。"
     Default: "httpd:latest"
   ContainerPort:
     Type: "Number"
-    Description: "hogehoge"
+    Description: "Specifies the port number to connect to the container."
     Default: "80"
   ContainerName:
     Type: "String"
-    Description: "hogehoge"
+    Description: "Specify the name of the container to run."
     Default: "Web-Server"
   ServiceTargetGroup:
     Type: "String"
-    Description: "hogehoge"
+    Description: "Specify the ARN of the target group you created in advance."
     Default: "arn:aws:elasticloadbalancing:ap-northeast-1:{AWSAccountID}:targetgroup/xxxxxxxxxxxxx/xxxxxxxxxxxxxxxxx"
 
 Resources:
@@ -83,4 +84,5 @@ Resources:
       Tags: 
         - Key: "Name"
           Value: !Ref "ServiceName"
+      # 利用するタスク定義
       TaskDefinition: !Ref TaskDefinition
