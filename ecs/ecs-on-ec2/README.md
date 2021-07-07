@@ -35,7 +35,8 @@ ECSのサービスで利用するロードバランサーのターゲットグ�
 1, 必要であればcreate-ecr-repo.ymlテンプレートでECRリポジトリを作成する<br>
 2, create-ecs-securitygroup.ymlテンプレートでセキュリティグループを作成する<br>
 3, create-ecs-on-ec2-cluster.ymlテンプレートでECSクラスターと必要リソースを作成する<br>
-4, create-ecs-service.ymlテンプレートでタスク定義とサービスを作成する
+4, create-ecs-service-alb.ymlテンプレートでロードバランサーとターゲットグループを作成する<br>
+5, create-ecs-service.ymlテンプレートでタスク定義とサービスを作成する
 
 
 
