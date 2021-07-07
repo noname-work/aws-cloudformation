@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description:
+  "Create an ALB for use with ECS services."
+
+Parameters:
+  ClusterName:
+    Type: "String"
+    Description: "Enter the name of the ECS Cluster."
+    Default: "sample-ecs-cluster"
+  VPCID:
+    Type: "AWS::EC2::VPC::Id"
+    Description: "Select at your VPC."
+  ALBSubnetIDs:
+    Type: "List<AWS::EC2::Subnet::Id>"
+    Description: "Select a subnet from two or more availability-zones."
+  ALBCertificateARN:
+    Type: "String"
+    Default: "arn:aws:acm:ap-northeast-1:{AWSAccountID}:certificate/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  ALBSecurityGroups:
+    Type: "List<AWS::EC2::SecurityGroup::Id>"
+    Description: "Select the security group to be used for ALB."
+
+Resources:
+  # ALBの作成
+  ApplicationLoadBalancer:
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    Properties: 
+      Name: !Sub "${ClusterName}-alb"
+      SecurityGroups: !Ref "ALBSecurityGroups"
+      Subnets: !Ref "ALBSubnetIDs"
+      Tags: 
+        - Key: "Name"
+          Value: !Sub "${ClusterName}-alb"
+      Type: "application"
+
+  # ターゲットグループの作成
+  ALBTargetGroup:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties:
+      Name: !Sub "${ClusterName}-tg"
+      # ヘルスチェックを有効にする
+      HealthCheckEnabled: "true"
+      # ヘルスチェックの実行間隔
+      HealthCheckIntervalSeconds: "30"
+      # ヘルスチェックのタイムアウト時間
+      HealthCheckTimeoutSeconds: "5"
+      # ヘルスチェック失敗と見なすまでの回数
+      HealthyThresholdCount: "5"
+      # ヘルスチェック時の確認パス
+      HealthCheckPath: "/"
+      HealthCheckProtocol: "HTTP"
+      # ヘルスチェックで200コードが返ってくればOK
+      Matcher:
+        HttpCode: "200"
+      Protocol: "HTTP"
+      Port: "80"
+      VpcId: !Ref "VPCID"
+      Tags: 
+        - Key: "Name"
+          Value: !Sub "${ClusterName}-tg"
+
+  # HTTP通信のリスナー設定  
+  HTTPListener:
+     Type: "AWS::ElasticLoadBalancingV2::Listener"
+     Properties:
+      # HTTP通信でのアクセスはHTTPSへリダイレクトさせる
+       DefaultActions:
+         - Type: "redirect"
+           RedirectConfig:
+             Protocol: "HTTPS"
+             Port: "443"
+             Host: "#{host}"
+             Path: "/#{path}"
+             Query: "#{query}"
+             StatusCode: "HTTP_301"
+       LoadBalancerArn: !Ref "ApplicationLoadBalancer"
+       Port: "80"
+       Protocol: "HTTP"
+
+  # HTTPS通信のリスナー設定
+  HTTPSListener:
+     Type: "AWS::ElasticLoadBalancingV2::Listener"
+     Properties:
+       DefaultActions:
+         - Type: "forward"
+           TargetGroupArn: !Ref "ALBTargetGroup"
+       LoadBalancerArn: !Ref "ApplicationLoadBalancer"
+       Port: "443"
+       Protocol: "HTTPS"
+       # SSL証明書をセット
+       Certificates: 
+         - CertificateArn: !Ref "ALBCertificateARN"

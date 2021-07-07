@@ -1,44 +1,45 @@
-AWSTemplateFormatVersion: '2010-09-09'
-Description: >
-  Stop or start the resource at the specified time.
- 
+AWSTemplateFormatVersion: "2010-09-09"
+Description:
+  "Stop or start the resource at the specified time." 
+
 Parameters:
   LambdaName:
-    Type: String
+    Type: "String"
     Description: "Enter the name of the Lambda function."
     Default: "ec2-delete-lambda"
   LambdaEcrUri:
-    Type: String
+    Type: "String"
     Description: "URI of ECR to invoke the Lambda function."
     Default: "{AWSAccountID}.dkr.ecr.ap-northeast-1.amazonaws.com/lambda-docker:latest"
   EventTimeCron:
-    Type: String
+    Type: "String"
     Description: "Describe the Cron formula with a 9-hour gap."
     Default: "cron(0 15 * * ? *)"
   EnvTagName:
-    Type: String
+    Type: "String"
     Description: "Name of the tag to be deleted."
     Default: "delete"
   EnvTagValue:
-    Type: String
+    Type: "String"
     Description: "VALUE of the tag to be deleted."
     Default: "true"
 
 Resources:
-  # Lambdaで利用するIAMポリシーの作成
+  # Lambdaで利用するIAMロールの作成
   LambdaExecutionRole:
     Type: "AWS::IAM::Role"
     Properties:
+      # ロールにアタッチするポリシーを作成する
       Policies:
-        - PolicyName: !Sub ${LambdaName}-policy
+        - PolicyName: !Sub "${LambdaName}-policy"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               - Effect: "Allow"
                 # 今回のサンプルはEC2インスタンスを検索して削除なので、検索と削除権限をつける
                 Action:
-                  - ec2:DescribeInstances
-                  - ec2:TerminateInstances
+                  - "ec2:DescribeInstances"
+                  - "ec2:TerminateInstances"
                 Resource: "*"
       # Lambdaで利用するためにAssumeRole設定
       AssumeRolePolicyDocument:
@@ -53,43 +54,43 @@ Resources:
 
   # Lambda関数の作成
   LambdaFunc:
-    Type: AWS::Lambda::Function
+    Type: "AWS::Lambda::Function"
     Properties:
       Description: "Function to execute the AWS CLI"
-      FunctionName: !Ref LambdaName
+      FunctionName: !Ref "LambdaName"
       # Dockerイメージから作成
-      PackageType: Image
-      Role: !GetAtt LambdaExecutionRole.Arn
+      PackageType: "Image"
+      Role: !GetAtt "LambdaExecutionRole.Arn"
       # タイムアウトが短いとLambdaが実行できないので調整
-      Timeout: 120
+      Timeout: "120"
       # シェルスクリプトで利用する環境変数を渡す
       Environment:
         Variables:
-          TAG_NAME: !Ref EnvTagName
-          TAG_VALUE: !Ref EnvTagValue
+          TAG_NAME: !Ref "EnvTagName"
+          TAG_VALUE: !Ref "EnvTagValue"
       # Lambdaコードの参照場所。今回はDockerイメージなのでURIを指定
       Code:
-        ImageUri: !Ref LambdaEcrUri
+        ImageUri: !Ref "LambdaEcrUri"
   
   # CloudWatchEventsの定期実行スケジュ０る
   LambdaEvent:
-    Type: AWS::Events::Rule
+    Type: "AWS::Events::Rule"
     Description: "When the time is up, delete the server."
     Properties:
-      State: ENABLED
+      State: "ENABLED"
       # cron式はUTCなので9時間ずれることに注意する
-      ScheduleExpression: !Ref EventTimeCron
-      Name: !Sub ${LambdaName}-event
+      ScheduleExpression: !Ref "EventTimeCron"
+      Name: !Sub "${LambdaName}-event"
       Description: "When the time is up, delete the server."
       Targets: 
-        - Arn: !GetAtt LambdaFunc.Arn
+        - Arn: !GetAtt "LambdaFunc.Arn"
           Id: "LambdaFunc"
 
   # CloudWatchEventsからの呼び出しを許可
   PermissionForEventsLambda:
-   Type: AWS::Lambda::Permission
+   Type: "AWS::Lambda::Permission"
    Properties:
-     FunctionName: !Ref LambdaFunc
+     FunctionName: !Ref "LambdaFunc"
      Action: "lambda:InvokeFunction"
      Principal: "events.amazonaws.com"
-     SourceArn: !GetAtt LambdaEvent.Arn
+     SourceArn: !GetAtt "LambdaEvent.Arn"

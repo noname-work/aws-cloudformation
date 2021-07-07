@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description:
+  "Create a security group to be used by the ECS host instance and load balancer."
+
+Parameters:
+  ClusterName:
+    Type: "String"
+    Description: "Enter the name of the ECS Cluster."
+    Default: "sample-ecs-cluster"
+  VPCID:
+    Type: "AWS::EC2::VPC::Id"
+    Description: "Select at your VPC."
+
+Resources:
+  # セキュリティグループの作成
+  ALBSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupName: !Sub "${ClusterName}-alb-sg"
+      GroupDescription: "Allow port 80 and port 443."
+      VpcId: !Ref "VPCID"
+      # ALBは80ポートと443ポートを開放しておく
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
+          FromPort: "80"
+          ToPort: "80"
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: "443"
+          ToPort: "443"
+          CidrIp: "0.0.0.0/0"
+      # タグに名前を入れておく
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${ClusterName}-alb-sg"
+
+  ECSSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupName: !Sub "${ClusterName}-ecs-sg"
+      GroupDescription: "Allow access from ALB and SSH only."
+      VpcId: !Ref "VPCID"
+      # EC2へのアクセスはALBのセキュリティグループとsshアクセス用の許可を設定
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
+          FromPort: "32768"
+          ToPort: "61000"
+          SourceSecurityGroupId: !Ref "ALBSecurityGroup"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${ClusterName}-ecs-sg"

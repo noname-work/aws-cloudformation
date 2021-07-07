@@ -1,16 +1,16 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Description:
-  This template will create a web server that only allows https.
+  "This template will create a web server that only allows https."
 
 Parameters:
   ServiceName:
-    Type: String
-    Description: Name of the EC2 instance. Related services will be named in the same way.
+    Type: "String"
+    Description: "Name of the EC2 instance. Related services will be named in the same way."
     Default: "web-server"
   InstanceType:
-    Type: String
-    Description: Allowed EC2 instance type.
-    Default: t2.micro
+    Type: "String"
+    Description: "Allowed EC2 instance type."
+    Default: "t2.micro"
     AllowedValues: [t2.nano, t2.micro, t2.small, t2.medium, t2.large, t2.xlarge, t2.2xlarge,
       t3.nano, t3.micro, t3.small, t3.medium, t3.large, t3.xlarge, t3.2xlarge,
       m4.large, m4.xlarge, m4.2xlarge, m4.4xlarge,
@@ -18,90 +18,90 @@ Parameters:
       c3.large, c3.xlarge, c3.2xlarge, c3.4xlarge,
       c4.large, c4.xlarge, c4.2xlarge, c4.4xlarge,
       c5.large, c5.xlarge, c5.2xlarge, c5.4xlarge]
-    ConstraintDescription: Please choose a valid instance type.
+    ConstraintDescription: "Please choose a valid instance type."
   VPCID:
     Type: "AWS::EC2::VPC::Id"
-    Description: Select at your VPC.
+    Description: "Select at your VPC."
   KeyName:
     Type: "AWS::EC2::KeyPair::KeyName"
-    Description: Select at your EC2 KeyPair.
+    Description: "Select at your EC2 KeyPair."
   EC2SubnetID:
     Type: "AWS::EC2::Subnet::Id"
-    Description: Select the subnet where you want to launch the EC2 instance.
+    Description: "Select the subnet where you want to launch the EC2 instance."
   InstanceImage:
-    Type: String
-    Description: Specify the AMI to be launched. The default is AmazonLinux2.
+    Type: "String"
+    Description: "Specify the AMI to be launched. The default is AmazonLinux2."
     Default: "ami-001f026eaf69770b4"
   ALBSubnetIDs:
     Type: "List<AWS::EC2::Subnet::Id>"
-    Description: Select a subnet from two or more availability-zones.
+    Description: "Select a subnet from two or more availability-zones."
   ALBCertificateARN:
-    Type: String
+    Type: "String"
     Default: "arn:aws:acm:ap-northeast-1:{AWSAccountID}:certificate/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
 Resources:
   # セキュリティグループの作成
   ALBSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
+    Type: "AWS::EC2::SecurityGroup"
     Properties:
-      GroupName: !Sub ${ServiceName}-alb-sg
-      GroupDescription: Allow port 80 and port 443.
-      VpcId: !Ref VPCID
+      GroupName: !Sub "${ServiceName}-alb-sg"
+      GroupDescription: "Allow port 80 and port 443."
+      VpcId: !Ref "VPCID"
       # ALBは80ポートと443ポートを開放しておく
       SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: 0.0.0.0/0
+        - IpProtocol: "tcp"
+          FromPort: "80"
+          ToPort: "80"
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: "443"
+          ToPort: "443"
+          CidrIp: "0.0.0.0/0"
       # タグに名前を入れておく
       Tags:
-        - Key: Name
-          Value: !Sub ${ServiceName}-alb-sg
+        - Key: "Name"
+          Value: !Sub "${ServiceName}-alb-sg"
   EC2SecurityGroup:
-    Type: AWS::EC2::SecurityGroup
+    Type: "AWS::EC2::SecurityGroup"
     Properties:
-      GroupName: !Sub ${ServiceName}-ec2-sg
-      GroupDescription: Allow access from ALB and SSH only.
-      VpcId: !Ref VPCID
+      GroupName: !Sub "${ServiceName}-ec2-sg"
+      GroupDescription: "Allow access from ALB and SSH only."
+      VpcId: !Ref "VPCID"
       # EC2へのアクセスはALBのセキュリティグループとsshアクセス用の許可を設定
       SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          SourceSecurityGroupId: !Ref ALBSecurityGroup
+        - IpProtocol: "tcp"
+          FromPort: "80"
+          ToPort: "80"
+          SourceSecurityGroupId: !Ref "ALBSecurityGroup"
         # SSH用のIPアドレスは自宅かVPNなどで絞っておくのが望ましい
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
+        - IpProtocol: "tcp"
+          FromPort: "22"
+          ToPort: "22"
+          CidrIp: "0.0.0.0/0"
       Tags:
-        - Key: Name
-          Value: !Sub ${ServiceName}-ec2-sg
+        - Key: "Name"
+          Value: !Sub "${ServiceName}-ec2-sg"
 
   # EC2インスタンスの作成
   EC2Instance:
-    Type: AWS::EC2::Instance
+    Type: "AWS::EC2::Instance"
     Properties:
-      InstanceType: !Ref InstanceType
-      ImageId: !Ref InstanceImage
-      KeyName: !Ref KeyName
+      InstanceType: !Ref "InstanceType"
+      ImageId: !Ref "InstanceImage"
+      KeyName: !Ref "KeyName"
       # ストレージのタイプと容量を設定。デフォルトは8[GB]
       BlockDeviceMappings: 
         - DeviceName: "/dev/sdh"
           Ebs: 
             VolumeType: "gp3"
-            VolumeSize: 8
+            VolumeSize: "8"
       NetworkInterfaces: 
         # パブリックなIP割り当ての設定。NATゲートウェイが設定されているプライベートサブネット上で立ち上げる場合は不要です。
-        - AssociatePublicIpAddress: true
-          DeviceIndex: 0
-          SubnetId: !Ref EC2SubnetID
+        - AssociatePublicIpAddress: "true"
+          DeviceIndex: "0"
+          SubnetId: !Ref "EC2SubnetID"
           GroupSet: 
-            - !Ref EC2SecurityGroup
+            - !Ref "EC2SecurityGroup"
       # 起動時にApacheをインストールして立ち上げる例
       UserData:
         Fn::Base64: | 
@@ -111,52 +111,51 @@ Resources:
            systemctl start httpd.service
            systemctl enable httpd.service
       Tags:
-        - Key: Name
-          Value: !Ref ServiceName
+        - Key: "Name"
+          Value: !Ref "ServiceName"
 
   # ALBの作成
   ApplicationLoadBalancer:
-    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
     Properties: 
-      Name: !Sub ${ServiceName}-alb
+      Name: !Sub "${ServiceName}-alb"
       SecurityGroups: 
-        - !Ref ALBSecurityGroup
-      Subnets: !Ref ALBSubnetIDs
+        - !Ref "ALBSecurityGroup"
+      Subnets: !Ref "ALBSubnetIDs"
       Tags: 
-        - Key: Name
-          Value: !Sub ${ServiceName}-alb
-      Type: application
-
+        - Key: "Name"
+          Value: !Sub "${ServiceName}-alb"
+      Type: "application"
 
   # ターゲットグループの作成
   ALBTargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
     Properties:
-      Name: !Sub ${ServiceName}-tg
+      Name: !Sub "${ServiceName}-tg"
       # ヘルスチェックを有効にする
-      HealthCheckEnabled: true
+      HealthCheckEnabled: "true"
       # ヘルスチェックの実行間隔
-      HealthCheckIntervalSeconds: 30
+      HealthCheckIntervalSeconds: "30"
       # ヘルスチェックのタイムアウト時間
-      HealthCheckTimeoutSeconds: 5
+      HealthCheckTimeoutSeconds: "5"
       # ヘルスチェック失敗と見なすまでの回数
-      HealthyThresholdCount: 5
+      HealthyThresholdCount: "5"
       # ヘルスチェック時の確認パス
       HealthCheckPath: "/"
-      HealthCheckPort: 80
-      HealthCheckProtocol: HTTP
+      HealthCheckPort: "80"
+      HealthCheckProtocol: "HTTP"
       # ヘルスチェックで200コードが返ってくればOK
       Matcher:
-        HttpCode: 200
-      Protocol: HTTP
+        HttpCode: "200"
+      Protocol: "HTTP"
       # ALBがターゲットサーバーへトラフィックを送るときのポート。今回のEC2はHTTP通信しかできないので80ポートを指定。
-      Port: 80
+      Port: "80"
       Targets:
-        - Id: !Ref EC2Instance
-      VpcId: !Ref VPCID
+        - Id: !Ref "EC2Instance"
+      VpcId: !Ref "VPCID"
       Tags: 
-        - Key: Name
-          Value: !Sub ${ServiceName}-tg
+        - Key: "Name"
+          Value: !Sub "${ServiceName}-tg"
 
   # HTTP通信のリスナー設定  
   HTTPListener:
@@ -167,13 +166,13 @@ Resources:
          - Type: "redirect"
            RedirectConfig:
              Protocol: "HTTPS"
-             Port: 443
+             Port: "443"
              Host: "#{host}"
              Path: "/#{path}"
              Query: "#{query}"
              StatusCode: "HTTP_301"
-       LoadBalancerArn: !Ref ApplicationLoadBalancer
-       Port: 80
+       LoadBalancerArn: !Ref "ApplicationLoadBalancer"
+       Port: "80"
        Protocol: "HTTP"
 
   # HTTPS通信のリスナー設定
@@ -182,10 +181,10 @@ Resources:
      Properties:
        DefaultActions:
          - Type: "forward"
-           TargetGroupArn: !Ref ALBTargetGroup
-       LoadBalancerArn: !Ref ApplicationLoadBalancer
-       Port: 443
+           TargetGroupArn: !Ref "ALBTargetGroup"
+       LoadBalancerArn: !Ref "ApplicationLoadBalancer"
+       Port: "443"
        Protocol: "HTTPS"
        # SSL証明書をセット
        Certificates: 
-         - CertificateArn: !Ref ALBCertificateARN
+         - CertificateArn: !Ref "ALBCertificateARN"

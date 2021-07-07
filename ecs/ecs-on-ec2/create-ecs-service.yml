@@ -1,0 +1,88 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description:
+  "Create definitions for ECS services and tasks.
+  You need to prepare a Service-Linked ecsServiceRole in advance."
+
+Parameters:
+  ClusterName:
+    Type: "String"
+    Description: "Enter the name of the ECS Cluster."
+    Default: "sample-ecs-cluster"
+  ServiceName:
+    Type: "String"
+    Description: "Enter the name of the ECS Service."
+    Default: "sample-ecs-service"
+  DesiredServiceCount:
+    Type: "Number"
+    Description: "The desired number of containers for the service to run."
+    Default: "2"
+  ImageURI:
+    Type: "String"
+    Description: "Specify the image of the container to be launched."
+    Default: "httpd:latest"
+  ContainerPort:
+    Type: "Number"
+    Description: "Specifies the port number to connect to the container."
+    Default: "80"
+  ContainerName:
+    Type: "String"
+    Description: "Specify the name of the container to run."
+    Default: "Web-Server"
+  ServiceTargetGroup:
+    Type: "String"
+    Description: "Specify the ARN of the target group you created in advance."
+    Default: "arn:aws:elasticloadbalancing:ap-northeast-1:{AWSAccountID}:targetgroup/xxxxxxxxxxxxx/xxxxxxxxxxxxxxxxx"
+
+Resources:
+  # タスク定義の作成
+  TaskDefinition:
+    Type: "AWS::ECS::TaskDefinition"
+    Properties: 
+      ContainerDefinitions: 
+        - Name: !Ref "ContainerName"
+          Image: !Ref "ImageURI"
+          # コンテナに割り当てるvCPUで0を割り当てるとホストのCPUを自由に使う
+          Cpu: "0"
+          # コンテナに割り当てるメモリ(MB)で設定した値は超えられない
+          Memory: "128"
+          PortMappings: 
+              # ホストのポート設定を0にすると動的なマッピングになる
+            - ContainerPort: !Ref "ContainerPort"
+              HostPort: "0"
+          # コンテナの立ち上げに失敗した時に関連コンテナを全て停止するか。今回は1つのタスク定義に1コンテナだけなのでtrueでOK
+          Essential: "true" 
+      # タスク定義のファミリー名
+      Family: !Sub "${ServiceName}-task"
+      # コンテナのネットワークモード設定
+      NetworkMode: "bridge"
+      Tags: 
+        - Key: "Name"
+          Value: !Sub "${ServiceName}-task"
+
+  # サービスの作成
+  EcsService:
+    Type: "AWS::ECS::Service"
+    Properties: 
+      ServiceName: !Ref "ServiceName"
+      Cluster: !Ref "ClusterName"
+      # サービスコンテナの希望数
+      DesiredCount: !Ref "DesiredServiceCount"
+      LaunchType: "EC2"
+      # サービスと紐づくロードバランサーのターゲットグループを指定
+      LoadBalancers: 
+        - TargetGroupArn: !Ref "ServiceTargetGroup"
+          ContainerName: !Ref "ContainerName"
+          ContainerPort: !Ref "ContainerPort"
+      # デーモン(インスタンスにつき1台サービスを実行)にするか、レプリカで起動するか
+      SchedulingStrategy: "REPLICA"
+      # デプロイ時の設定
+      DeploymentConfiguration:
+        # デプロイ時に最大で希望数の2倍になるタイミングがある
+        MaximumPercent: "200"
+        # デプロイ時に最小で希望数の半分になるタイミングがある
+        MinimumHealthyPercent: "50"
+      Tags: 
+        - Key: "Name"
+          Value: !Ref "ServiceName"
+      # 利用するタスク定義
+      TaskDefinition: !Ref TaskDefinition

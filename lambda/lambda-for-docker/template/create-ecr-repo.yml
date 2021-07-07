@@ -1,16 +1,17 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Create ECR repository.
+Description: 
+  "Create ECR repository."
 
 # Lambdaで実行するDockerイメージを格納するECRを作成する
 Resources:
   LambdaEcrRepository:
-    Type: AWS::ECR::Repository
+    Type: "AWS::ECR::Repository"
     Properties:
-      RepositoryName: lambda-docker
+      RepositoryName: "lambda-docker"
 
 # 別のスタックで利用できるようにエクスポートしておく
 Outputs:
   LambdaEcrRepository:
-    Value: !Ref LambdaEcrRepository
+    Value: !Ref "LambdaEcrRepository"
     Export:
-      Name: LambdaEcrRepository
+      Name: "LambdaEcrRepository"

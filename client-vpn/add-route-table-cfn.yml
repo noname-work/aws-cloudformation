@@ -1,22 +1,22 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Description:
-  Add a route table to ClientVPN.
+  "Add a route table to ClientVPN.
   For example, this can be useful to access other subnets that are VPC peering.
-  It can also be useful for controlling browsing to certain websites, but 0.0.0.0/0 is prohibited.
+  It can also be useful for controlling browsing to certain websites, but 0.0.0.0/0 is prohibited."
 
 Parameters:
   SubnetID1:
     Type: "AWS::EC2::Subnet::Id"
-    Description: Select at private subnet in your selected VPC.
+    Description: "Select at private subnet in your selected VPC."
   SubnetID2:
     Type: "AWS::EC2::Subnet::Id"
-    Description: Select at private subnet in your selected VPC.
+    Description: "Select at private subnet in your selected VPC."
   AccessRage1:
-    Type: String
+    Type: "String"
     Description: "Range of routes to be accessed from the VPN. (SubnetID1)"
     Default: "172.17.0.0/16"
   AccessRage2:
-    Type: String
+    Type: "String"
     Description: "Range of routes to be accessed from the VPN. (SubnetID2)"
     Default: "172.17.0.0/16"
 
@@ -26,18 +26,18 @@ Resources:
     Type: "AWS::EC2::ClientVpnRoute"
     Properties:
       # create-clientvpn-cfn.ymlで作成したエンドポイントに対してルートテーブルを追加
-      ClientVpnEndpointId: !ImportValue ClientVpnEndpoint
+      ClientVpnEndpointId: !ImportValue "ClientVpnEndpoint"
       # 対象のサブネットを指定
       TargetVpcSubnetId: 
-        Ref: SubnetID1
+        Ref: "SubnetID1"
       # 向き先のCIDRブロックを指定
-      DestinationCidrBlock: !Ref AccessRage1
+      DestinationCidrBlock: !Ref "AccessRage1"
       Description: "SubnetID1 Access Route Table."
   RangeAccessRoute2:
     Type: "AWS::EC2::ClientVpnRoute"
     Properties:
-      ClientVpnEndpointId: !ImportValue ClientVpnEndpoint
+      ClientVpnEndpointId: !ImportValue "ClientVpnEndpoint"
       TargetVpcSubnetId: 
-        Ref: SubnetID2
-      DestinationCidrBlock: !Ref AccessRage2
+        Ref: "SubnetID2"
+      DestinationCidrBlock: !Ref "AccessRage2"
       Description: "SubnetID2 Access Route Table."
