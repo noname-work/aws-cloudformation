@@ -25,7 +25,7 @@ ECSのサービスで利用するロードバランサーのターゲットグ�
 
 ## 事前準備
 <img src="https://noname.work/wp-content/uploads/2021/07/%E5%BF%85%E8%A6%81%E3%81%AAIAM-1024x404.png" width="600">
-[AWSServiceRoleForECS]というサービスリンクロールを発行しておく必要がある。
+[AWSServiceRoleForECS]というサービスリンクロールを発行しておく必要がある。<br>
 初めてECSサービスを利用する場合は以下のコマンドで生成できる。
 
 ```$ aws iam create-service-linked-role --aws-service-name ecs.amazonaws.com```
