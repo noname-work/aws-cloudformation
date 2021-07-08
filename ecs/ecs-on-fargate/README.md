@@ -1,5 +1,4 @@
 ## 構成図
-<img src="https://noname.work/wp-content/uploads/2021/07/1ECS%E7%92%B0%E5%A2%83%E3%81%AE%E6%A7%8B%E6%88%90%E5%9B%B3.png" width="500">
 ECSクラスターとアクセスのために利用するロードバランサーを作成する。<br>
 VPCとACMは本テンプレートでは作成しないため、別途準備する必要がある。
 
