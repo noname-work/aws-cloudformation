@@ -40,7 +40,7 @@ Resources:
       GroupName: !Sub "${ClusterName}-ecs-sg"
       GroupDescription: "Allow access from ALB and SSH only."
       VpcId: !Ref "VPCID"
-      # EC2へのアクセスはALBのセキュリティグループとsshアクセス用の許可を設定
+      # EC2へのアクセスはALBのセキュリティグループの許可を設定
       SecurityGroupIngress:
         - IpProtocol: "tcp"
           FromPort: "32768"
