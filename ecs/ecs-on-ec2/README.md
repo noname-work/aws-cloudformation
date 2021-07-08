@@ -41,7 +41,7 @@ ECSのサービスで利用するロードバランサーのターゲットグ�
 
 
 
-## create-ecr-repo.ymlのパラメータ
+## create-ecs-securitygroup.ymlのパラメータ
 <img src="https://noname.work/wp-content/uploads/2021/07/2-%E3%82%BB%E3%82%AD%E3%83%A5%E3%83%AA%E3%83%86%E3%82%A3%E3%82%AF%E3%82%99%E3%83%AB%E3%83%BC%E3%83%95%E3%82%9A%E3%81%AE%E3%83%8F%E3%82%9A%E3%83%A9%E3%83%A1%E3%83%BC%E3%82%BF-1024x592.png" width="600">
 
 | Parameter | Description |
@@ -51,7 +51,7 @@ ECSのサービスで利用するロードバランサーのターゲットグ�
 
 
 
-## create-ecs-securitygroup.ymlのパラメータ
+## create-ecs-on-ec2-cluster.ymlのパラメータ
 <img src="https://noname.work/wp-content/uploads/2021/07/3-ECS%E3%82%AF%E3%83%A9%E3%82%B9%E3%82%BF%E3%83%BC%E3%81%AE%E3%83%8F%E3%82%9A%E3%83%A9%E3%83%A1%E3%83%BC%E3%82%BF.png" width="600">
 
 | Parameter | Description |
