@@ -91,7 +91,7 @@ Resources:
       KeyName: !Ref "KeyName"
       # ストレージのタイプと容量を設定。デフォルトは8[GB]
       BlockDeviceMappings: 
-        - DeviceName: "/dev/sdh"
+        - DeviceName: "/dev/xvda"
           Ebs: 
             VolumeType: "gp3"
             VolumeSize: "8"
