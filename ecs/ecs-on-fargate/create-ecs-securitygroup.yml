@@ -40,11 +40,11 @@ Resources:
       GroupName: !Sub "${ClusterName}-ecs-sg"
       GroupDescription: "Allow access from ALB only."
       VpcId: !Ref "VPCID"
-      # EC2へのアクセスはALBのセキュリティグループの許可を設定
+      # FargateへのアクセスはALBのセキュリティグループの許可を設定
       SecurityGroupIngress:
         - IpProtocol: "tcp"
-          FromPort: "32768"
-          ToPort: "61000"
+          FromPort: "80"
+          ToPort: "80"
           SourceSecurityGroupId: !Ref "ALBSecurityGroup"
       Tags:
         - Key: "Name"

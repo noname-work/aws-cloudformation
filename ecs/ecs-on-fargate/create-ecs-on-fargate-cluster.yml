@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description:
-  "hogehoge"
+  "Create an ECS cluster to run Fargate."
 
 Parameters:
   ClusterName:
