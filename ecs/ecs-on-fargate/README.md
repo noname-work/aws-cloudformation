@@ -40,8 +40,7 @@ ECSのサービスで利用するロードバランサーのターゲットグ�
 
 
 
-## create-ecr-repo.ymlのパラメータ
-<img src="https://noname.work/wp-content/uploads/2021/07/2-%E3%82%BB%E3%82%AD%E3%83%A5%E3%83%AA%E3%83%86%E3%82%A3%E3%82%AF%E3%82%99%E3%83%AB%E3%83%BC%E3%83%95%E3%82%9A%E3%81%AE%E3%83%8F%E3%82%9A%E3%83%A9%E3%83%A1%E3%83%BC%E3%82%BF-1024x592.png" width="600">
+## create-ecs-securitygroup.ymlのパラメータ
 
 | Parameter | Description |
 |:---|:---|
@@ -50,25 +49,16 @@ ECSのサービスで利用するロードバランサーのターゲットグ�
 
 
 
-## create-ecs-securitygroup.ymlのパラメータ
-<img src="https://noname.work/wp-content/uploads/2021/07/3-ECS%E3%82%AF%E3%83%A9%E3%82%B9%E3%82%BF%E3%83%BC%E3%81%AE%E3%83%8F%E3%82%9A%E3%83%A9%E3%83%A1%E3%83%BC%E3%82%BF.png" width="600">
+## create-ecs-on-fargate-cluster.ymlのパラメータ
 
 | Parameter | Description |
 |:---|:---|
 | ClusterName | 作成予定のECSクラスター名を入力 |
-| InstanceType | ECSのホストインスタンスとして利用するインスタンスタイプを選択 |
-| ECSSubnetIDs | ECSインスタンスを立てるサブネットを選択 |
-| KeyName | ECSインスタンスに接続するためのキーペアを選択 |
-| ImageId | ECSに最適化されたAMIのIDを入力 |
-| ECSSecurityGroups | ECSインスタンスにアタッチするセキュリティグループを選択 |
-| ScalingDesiredCapacity | ECSインスタンスの希望数 |
-| ScalingMaxSize | ECSインスタンスの最大数 |
-| ScalingMinSize | ECSインスタンスの最小数 |
+
 
 
 
 ## create-ecs-service-alb.ymlのパラメータ
-<img src="https://noname.work/wp-content/uploads/2021/07/4-ALB%E3%81%AE%E3%83%8F%E3%82%9A%E3%83%A9%E3%83%A1%E3%83%BC%E3%82%BF.png" width="600">
 
 | Parameter | Description |
 |:---|:---|
@@ -80,7 +70,6 @@ ECSのサービスで利用するロードバランサーのターゲットグ�
 
 
 ## create-ecs-service.ymlのパラメータ
-<img src="https://noname.work/wp-content/uploads/2021/07/5-%E3%82%B5%E3%83%BC%E3%83%92%E3%82%99%E3%82%B9%E3%81%AE%E3%83%8F%E3%82%9A%E3%83%A9%E3%83%A1%E3%83%BC%E3%82%BF-1024x752.png" width="600">
 
 | Parameter | Description |
 |:---|:---|
@@ -91,8 +80,8 @@ ECSのサービスで利用するロードバランサーのターゲットグ�
 | ContainerPort | コンテナポートを入力 |
 | ContainerName | タスク定義で利用するコンテナの名前を入力 |
 | ServiceTargetGroup | ECSサービスで利用するロードバランサーのターゲットグループARN |
+| FargateSubnetIDs | Fargateを実行するサブネットを1つ以上指定 |
+| ECSSecurityGroups | Fargateにアタッチするセキュリティグループを指定 |
 
 ***
 # 参考URL
-- [[AWS]ECS環境を作成するCloudFormationのテンプレート](https://noname.work/3105.html)
-- [Amazon ECS 用のサービスにリンクされたロール](https://docs.aws.amazon.com/ja_jp/AmazonECS/latest/developerguide/using-service-linked-roles.html)
