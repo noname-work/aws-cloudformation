@@ -1,4 +1,5 @@
 ## 構成図
+<img src="https://noname.work/wp-content/uploads/2021/07/%E6%A7%8B%E6%88%90%E5%9B%B3.png" width="500">
 ECSクラスターとアクセスのために利用するロードバランサーを作成する。<br>
 VPCとACMは本テンプレートでは作成しないため、別途準備する必要がある。
 
@@ -40,6 +41,7 @@ ECSのサービスで利用するロードバランサーのターゲットグ�
 
 
 ## create-ecs-securitygroup.ymlのパラメータ
+<img src="https://noname.work/wp-content/uploads/2021/07/2-%E3%82%BB%E3%82%AD%E3%83%A5%E3%83%AA%E3%83%86%E3%82%A3%E3%82%AF%E3%82%99%E3%83%AB%E3%83%BC%E3%83%95%E3%82%9A%E3%81%AE%E3%83%8F%E3%82%9A%E3%83%A9%E3%83%A1%E3%83%BC%E3%82%BF-1024x592.png" width="600">
 
 | Parameter | Description |
 |:---|:---|
@@ -47,17 +49,8 @@ ECSのサービスで利用するロードバランサーのターゲットグ�
 | VPCID | セキュリティグループを作成するVPCのIDを選択。これは作成予定のECSクラスターと同じVPCを選択する必要がある |
 
 
-
-## create-ecs-on-fargate-cluster.ymlのパラメータ
-
-| Parameter | Description |
-|:---|:---|
-| ClusterName | 作成予定のECSクラスター名を入力 |
-
-
-
-
 ## create-ecs-service-alb.ymlのパラメータ
+<img src="https://noname.work/wp-content/uploads/2021/07/4-ALB%E3%81%AE%E3%83%8F%E3%82%9A%E3%83%A9%E3%83%A1%E3%83%BC%E3%82%BF.png" width="600">
 
 | Parameter | Description |
 |:---|:---|
@@ -69,6 +62,7 @@ ECSのサービスで利用するロードバランサーのターゲットグ�
 
 
 ## create-ecs-service.ymlのパラメータ
+<img src="https://noname.work/wp-content/uploads/2021/07/service-1024x1002.png" width="600">
 
 | Parameter | Description |
 |:---|:---|
@@ -84,3 +78,4 @@ ECSのサービスで利用するロードバランサーのターゲットグ�
 
 ***
 # 参考URL
+- [[AWS]Fargateでコンテナイメージを実行する](https://noname.work/3138.html)
