@@ -51,6 +51,15 @@ Resources:
               HostPort: "0"
           # コンテナの立ち上げに失敗した時に関連コンテナを全て停止するか。今回は1つのタスク定義に1コンテナだけなのでtrueでOK
           Essential: "true" 
+          # CloudWatchLogsにログを出力
+          LogConfiguration:
+            LogDriver: "awslogs"
+            # ロググループを作成してログ出力する
+            Options:
+              awslogs-group: !Sub "/ecs/${ServiceName}"
+              awslogs-region: "ap-northeast-1"
+              awslogs-stream-prefix: "ecs"
+              awslogs-create-group: "true"
       # タスク定義のファミリー名
       Family: !Sub "${ServiceName}-task"
       # コンテナのネットワークモード設定

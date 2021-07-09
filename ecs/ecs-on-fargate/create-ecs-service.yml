@@ -64,10 +64,20 @@ Resources:
               HostPort: "80"
           # コンテナの立ち上げに失敗した時に関連コンテナを全て停止するか。今回は1つのタスク定義に1コンテナだけなのでtrueでOK
           Essential: "true" 
+          # CloudWatchLogsにログを出力
+          LogConfiguration:
+            LogDriver: "awslogs"
+            # ロググループを作成してログ出力する
+            Options:
+              awslogs-group: !Sub "/ecs/${ServiceName}"
+              awslogs-region: "ap-northeast-1"
+              awslogs-stream-prefix: "ecs"
+              awslogs-create-group: "true"
       # タスク定義のファミリー名
       Family: !Sub "${ServiceName}-task"
       # Fargateはawsvpcを指定
       NetworkMode: "awsvpc"
+      ExecutionRoleArn: !Ref "TaskExecutionRole"
       Tags: 
         - Key: "Name"
           Value: !Sub "${ServiceName}-task"
@@ -84,7 +94,7 @@ Resources:
       LaunchType: "FARGATE"
       # Fargateの場合はネットワーク設定が必要
       NetworkConfiguration:
-        awsvpcConfiguration:
+        AwsvpcConfiguration:
           # プライベートリンクが設定されているか、Privateなサブネット上でNATゲートウェイがあるならDISABLEでも良い
           AssignPublicIp: "ENABLED"
           # Fargateにセキュリティグループの設定が必要
@@ -108,4 +118,33 @@ Resources:
         - Key: "Name"
           Value: !Ref "ServiceName"
       # 利用するタスク定義
-      TaskDefinition: !Ref TaskDefinition
+      TaskDefinition: !Ref "TaskDefinition"
+
+  # Fargateのタスク実行ロール
+  TaskExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub "${ClusterName}-task-execution-role"
+      # ECSのタスク実行ポリシーをアタッチ
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+      # ロールにアタッチするポリシーを作成する
+      Policies:
+        - PolicyName: !Sub "${ClusterName}-task-execution-policy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                # CloudWatchLogsのロググループを作成する権限
+                Action:
+                  - "logs:CreateLogGroup"
+                Resource: "*"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "ecs-tasks.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"

@@ -122,7 +122,7 @@ Resources:
           #!/bin/bash
           echo "ECS_CLUSTER=${ClusterName}" >> /etc/ecs/ecs.config
 
-  # ECSで利用するためのポリシーを作成
+  # ECSで利用するためのロールを作成
   EcsInstanceRole:
     Type: "AWS::IAM::Role"
     Properties:

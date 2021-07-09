@@ -72,7 +72,7 @@ Resources:
       Code:
         ImageUri: !Ref "LambdaEcrUri"
   
-  # CloudWatchEventsの定期実行スケジュ０る
+  # CloudWatchEventsの定期実行スケジュール
   LambdaEvent:
     Type: "AWS::Events::Rule"
     Description: "When the time is up, delete the server."
