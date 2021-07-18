@@ -1,0 +1,278 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description:
+  "Built JMeter in a Master/Slave configuration running on Fargate."
+
+Parameters:
+  JmeterClusterName:
+    Type: "String"
+    Description: "Name of the cluster where you want to run JMeter."
+    Default: "jmeter"
+  MasterServiceName:
+    Type: "String"
+    Description: "Master service name."
+    Default: "jmeter-master"
+  SlaveServiceName:
+    Type: "String"
+    Description: "Slave service name."
+    Default: "jmeter-slave"
+  FargateCPU:
+    Type: "String"
+    AllowedValues: ["256","512","1024","2048","4096"]
+    Description: "CPU to be allocated to Fargate."
+    Default: "4096"
+  FargateMemory:
+    Type: "String"
+    AllowedValues: ["512","1024","2048","3072","4096","5120","6144","7168","8192"]
+    Description: "Memory to be allocated to Fargate."
+    Default: "8192"
+  DesiredSlaveCount:
+    Type: "Number"
+    Description: "The desired number of containers for the jmeter slave service to run."
+    Default: "3"
+  VPCID:
+    Type: "AWS::EC2::VPC::Id"
+    Description: "Select at your VPC."
+  ImageURI:
+    Type: "String"
+    Description: "Specify the image of the container to be launched."
+    Default: "httpd:latest"
+  FargateSubnetIDs:
+    Type: "List<AWS::EC2::Subnet::Id>"
+    Description: "Select a public subnet."
+  JmxFileName:
+    Type: "String"
+    Description: "Scenario file to run.(jmx file)"
+    Default: "HTTPRequest.jmx"
+
+Resources:
+  # ECSクラスターの作成
+  EcsCluster:
+    Type: "AWS::ECS::Cluster"
+    Properties: 
+      ClusterName: !Ref "JmeterClusterName"
+      # ContainerInsightsを利用する設定。追加料金が発生するが細かなメトリクスを確認できる。
+      ClusterSettings: 
+        - Name: "containerInsights"
+          # 詳細な監視が必要な場合はenabledにしておく
+          Value: "disabled"
+      Tags: 
+        - Key: "Name"
+          Value: !Ref "JmeterClusterName"
+
+  # セキュリティグループの作成
+  JMeterSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupName: !Sub "${JmeterClusterName}-sg"
+      GroupDescription: "JMeter SecurityGroup."
+      VpcId: !Ref "VPCID"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${JmeterClusterName}-sg"
+
+  JMeterSecurityGroupIngress:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    Properties:
+      # Master/Slaveで疎通ができるように許可する
+      GroupId: !Ref "JMeterSecurityGroup"
+      IpProtocol: "-1"
+      FromPort: "0"
+      ToPort: "0"
+      SourceSecurityGroupId: !Ref "JMeterSecurityGroup"
+
+  # Fargateのタスク実行ロール
+  TaskExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub "${JmeterClusterName}-task-execution-role"
+      # ECSのタスク実行ポリシーをアタッチ
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+      # ロールにアタッチするポリシーを作成する
+      Policies:
+        - PolicyName: !Sub "${JmeterClusterName}-task-execution-policy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                # 必要な権限を付与
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "ecs:DescribeClusters"
+                  - "ecs:DescribeTasks"
+                  - "ecs:DescribeTaskDefinition"
+                  - "ecs:UpdateService"
+                  - "ecs:ListTasks"
+                Resource: "*"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "ecs-tasks.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+
+  # Masterのタスク定義の作成
+  MasterTaskDefinition:
+    Type: "AWS::ECS::TaskDefinition"
+    Properties:
+      # Fargate用のタスク定義として作成する
+      RequiresCompatibilities:
+        - "FARGATE"
+      # Fargateで予約するvCPU
+      Cpu: !Ref "FargateCPU"
+      # Fargateで予約するメモリ
+      Memory: !Ref "FargateMemory"
+      ContainerDefinitions: 
+        - Name: !Ref "MasterServiceName"
+          Image: !Ref "ImageURI"
+          # タスクコンテナで利用するvCPU
+          Cpu: !Ref "FargateCPU"
+          # タスクコンテナで利用するメモリ
+          Memory: !Ref "FargateMemory"
+          PortMappings: 
+              # Fargateではホストとコンテナを同じポートにする
+            - ContainerPort: "4445"
+              HostPort: "4445"
+          # コンテナの立ち上げに失敗した時に関連コンテナを全て停止するか。今回は1つのタスク定義に1コンテナだけなのでtrueでOK
+          Essential: "true" 
+          # 環境変数のセット
+          Environment:
+            - Name: "CLUSTER_NAME"
+              Value: !Ref "JmeterClusterName"
+            - Name: "SLAVE_SERVICE_NAME"
+              Value: !Ref "SlaveServiceName"
+            - Name: "MASTER_SERVICE_NAME"
+              Value: !Ref "MasterServiceName"
+          # コンテナ実行コマンドを上書き
+          command: ["/files/master.sh",!Sub "${JmxFileName}"]
+          # CloudWatchLogsにログを出力
+          LogConfiguration:
+            LogDriver: "awslogs"
+            # ロググループを作成してログ出力する
+            Options:
+              awslogs-group: !Sub "/ecs/${MasterServiceName}"
+              awslogs-region: "ap-northeast-1"
+              awslogs-stream-prefix: "ecs"
+              awslogs-create-group: "true"
+      # タスク定義のファミリー名
+      Family: !Sub "${MasterServiceName}-task"
+      # Fargateはawsvpcを指定
+      NetworkMode: "awsvpc"
+      ExecutionRoleArn: !Ref "TaskExecutionRole"
+      TaskRoleArn: !Ref "TaskExecutionRole"
+      Tags: 
+        - Key: "Name"
+          Value: !Sub "${MasterServiceName}-task"
+
+  # Slaveのタスク定義の作成
+  SlaveTaskDefinition:
+    Type: "AWS::ECS::TaskDefinition"
+    Properties:
+      # Fargate用のタスク定義として作成する
+      RequiresCompatibilities:
+        - "FARGATE"
+      # Fargateで予約するvCPU
+      Cpu: !Ref "FargateCPU"
+      # Fargateで予約するメモリ
+      Memory: !Ref "FargateMemory"
+      ContainerDefinitions: 
+        - Name: !Ref "SlaveServiceName"
+          Image: !Ref "ImageURI"
+          # タスクコンテナで利用するvCPU
+          Cpu: !Ref "FargateCPU"
+          # タスクコンテナで利用するメモリ
+          Memory: !Ref "FargateMemory"
+          PortMappings: 
+              # Fargateではホストとコンテナを同じポートにする
+            - ContainerPort: "1099"
+              HostPort: "1099"
+          # コンテナの立ち上げに失敗した時に関連コンテナを全て停止するか。今回は1つのタスク定義に1コンテナだけなのでtrueでOK
+          Essential: "true"
+          # CloudWatchLogsにログを出力
+          LogConfiguration:
+            LogDriver: "awslogs"
+            # ロググループを作成してログ出力する
+            Options:
+              awslogs-group: !Sub "/ecs/${SlaveServiceName}"
+              awslogs-region: "ap-northeast-1"
+              awslogs-stream-prefix: "ecs"
+              awslogs-create-group: "true"
+      # タスク定義のファミリー名
+      Family: !Sub "${SlaveServiceName}-task"
+      # Fargateはawsvpcを指定
+      NetworkMode: "awsvpc"
+      ExecutionRoleArn: !Ref "TaskExecutionRole"
+      Tags: 
+        - Key: "Name"
+          Value: !Sub "${SlaveServiceName}-task"
+
+  # Slaveのサービス作成
+  SlaveEcsService:
+    Type: "AWS::ECS::Service"
+    Properties: 
+      ServiceName: !Ref "SlaveServiceName"
+      Cluster: !Ref "EcsCluster"
+      # Slaveコンテナの台数
+      DesiredCount: !Ref "DesiredSlaveCount"
+      # Fargateで実行
+      LaunchType: "FARGATE"
+      # Fargateの場合はネットワーク設定が必要
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: "ENABLED"
+          # Fargateにセキュリティグループの設定が必要
+          SecurityGroups:
+            - !Ref "JMeterSecurityGroup"
+          # Fargateを実行するサブネット
+          Subnets: !Ref "FargateSubnetIDs"
+      # レプリカで起動
+      SchedulingStrategy: "REPLICA"
+      # デプロイ時の設定
+      DeploymentConfiguration:
+        # デプロイ時に最大で希望数の2倍になるタイミングがある
+        MaximumPercent: "200"
+        # デプロイ時に最小で希望数の半分になるタイミングがある
+        MinimumHealthyPercent: "50"
+      Tags: 
+        - Key: "Name"
+          Value: !Ref "SlaveServiceName"
+      # 利用するタスク定義
+      TaskDefinition: !Ref "SlaveTaskDefinition"
+
+  # Masterのサービス作成
+  MasterEcsService:
+    Type: "AWS::ECS::Service"
+    # SlaveのIPが先に決まっている必要がある
+    DependsOn: "SlaveEcsService"
+    Properties: 
+      ServiceName: !Ref "MasterServiceName"
+      Cluster: !Ref "EcsCluster"
+      # masterは1台
+      DesiredCount: "1"
+      # Fargateで実行
+      LaunchType: "FARGATE"
+      # Fargateの場合はネットワーク設定が必要
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: "ENABLED"
+          # Fargateにセキュリティグループの設定が必要
+          SecurityGroups:
+            - !Ref "JMeterSecurityGroup"
+          # Fargateを実行するサブネット
+          Subnets: !Ref "FargateSubnetIDs"
+      # レプリカで起動
+      SchedulingStrategy: "REPLICA"
+      # デプロイ時の設定
+      DeploymentConfiguration:
+        # デプロイ時に最大で希望数の2倍になるタイミングがある
+        MaximumPercent: "200"
+        # デプロイ時に最小で希望数の半分になるタイミングがある
+        MinimumHealthyPercent: "50"
+      Tags: 
+        - Key: "Name"
+          Value: !Ref "MasterServiceName"
+      # 利用するタスク定義
+      TaskDefinition: !Ref "MasterTaskDefinition"
