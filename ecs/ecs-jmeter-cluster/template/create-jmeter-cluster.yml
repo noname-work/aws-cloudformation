@@ -35,7 +35,7 @@ Parameters:
   ImageURI:
     Type: "String"
     Description: "Specify the image of the container to be launched."
-    Default: "httpd:latest"
+    Default: "xxxxxxxxxxxx.dkr.ecr.ap-northeast-1.amazonaws.com/jmeter-repository:latest"
   FargateSubnetIDs:
     Type: "List<AWS::EC2::Subnet::Id>"
     Description: "Select a public subnet."

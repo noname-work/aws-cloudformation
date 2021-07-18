@@ -6,7 +6,7 @@ Parameters:
   EcrRepoName:
     Type: "String"
     Description: "Enter the name of the ECR Repository."
-    Default: "sample-repository"
+    Default: "jmeter-repository"
 
 # ECSで実行するDockerイメージを格納するECRを作成する
 Resources:
