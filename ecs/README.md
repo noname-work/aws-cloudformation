@@ -20,6 +20,10 @@ Fargateを利用したECS構成を構築します。<br>
 ・ECSクラスター<br>
 ・タスク定義とサービス、タスク実行ロール、CloudWatchLogsのロググループ
 
+**ecs-jmeter-cluster**:<br>
+ECS上で負荷試験ツールであるJMeterを実行します。<br>
+[AWS公式で公開されている負荷試験ソリューション](https://aws.amazon.com/jp/solutions/implementations/distributed-load-testing-on-aws/)よりも最小限のサービスで構築されています。
+
 ## サンプル構成
 <img src="https://noname.work/wp-content/uploads/2021/07/1ECS%E7%92%B0%E5%A2%83%E3%81%AE%E6%A7%8B%E6%88%90%E5%9B%B3.png" width="500">
 <img src="https://noname.work/wp-content/uploads/2021/07/%E6%A7%8B%E6%88%90%E5%9B%B3.png" width="500">
