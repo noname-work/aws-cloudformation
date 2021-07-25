@@ -28,8 +28,8 @@ Parameters:
   RdsInstanceType:
     Type: "String"
     Description: "Allowed EC2 instance type."
-    Default: "db.t3.micro"
-    AllowedValues: [db.t3.micro, db.t3.medium, db.r5.large, db.r5.xlarge, db.r5.2xlarge, db.r5.4xlarge]
+    Default: "db.t3.small"
+    AllowedValues: [db.t3.small, db.t3.medium, db.r5.large, db.r5.xlarge, db.r5.2xlarge, db.r5.4xlarge]
     ConstraintDescription: "Please choose a valid instance type."
 
 Resources:
