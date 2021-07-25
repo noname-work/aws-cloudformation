@@ -1,0 +1,124 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description:
+  "A template that runs Aurora in a clustered configuration."
+
+Parameters:
+  ServiceName:
+    Type: "String"
+    Description: "Name of the RDS instance. Related services will be named in the same way."
+    Default: "db-server"
+  VPCID:
+    Type: "AWS::EC2::VPC::Id"
+    Description: "Select at your VPC."
+  RdsSubnetIDs:
+    Type: "List<AWS::EC2::Subnet::Id>"
+    Description: "Select multiple subnets to set as SubnetGroup."
+  AccessSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup::Id"
+    Description: "Select a SecurityGroup that can connect to RDS."
+  RootUserName:
+    Type: "String"
+    Description: "Name of the root user of the database."
+    Default: "root"
+  RootPassword:
+    Type: "String"
+    NoEcho: "true"
+    Description: "Password of the root user of the database."
+    Default: "password"
+  RdsInstanceType:
+    Type: "String"
+    Description: "Allowed EC2 instance type."
+    Default: "db.t3.micro"
+    AllowedValues: [db.t3.micro, db.t3.medium, db.r5.large, db.r5.xlarge, db.r5.2xlarge, db.r5.4xlarge]
+    ConstraintDescription: "Please choose a valid instance type."
+
+Resources:
+  # セキュリティグループの作成
+  RdsSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupName: !Sub "${ServiceName}-aurora-sg"
+      GroupDescription: "Allow access from 3306 Port."
+      VpcId: !Ref "VPCID"
+      # Aurora for MySQL用に3306ポートを開放。Postgresの場合は5432を開放する。
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
+          FromPort: "3306"
+          ToPort: "3306"
+          SourceSecurityGroupId: !Ref "AccessSecurityGroup"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${ServiceName}-aurora-sg"
+
+  # RDSクラスターの作成
+  RdsCluster: 
+    Type: "AWS::RDS::DBCluster"
+    Properties:
+      DBClusterIdentifier: !Sub "${ServiceName}-cluster"
+      # クラスターに適用するパラメータグループを設定する
+      DBClusterParameterGroupName: !Ref "RdsClusterParameterGroup"
+      # インスタンスを立てるサブネットを設定したグループ
+      DBSubnetGroupName: !Ref "RdsSubnetGroup"
+      Engine: "aurora"
+      # Rootユーザーの初期設定
+      MasterUsername: !Ref "RootUserName"
+      MasterUserPassword: !Ref "RootPassword"
+      # アタッチするセキュリティグループ
+      VpcSecurityGroupIds: 
+        - !Ref "RdsSecurityGroup"
+
+  # クラスターのパラメータグループを作成
+  RdsClusterParameterGroup: 
+    Type: "AWS::RDS::DBClusterParameterGroup"
+    Properties: 
+      Description: "Parameter groups for use with Aurora Cluster."
+      Family: "aurora5.6"
+      Parameters: 
+        # タイムゾーン以外はデフォルトで作る
+        time_zone: "Asia/Tokyo"
+
+  # インスタンスのパラメータグループを作成
+  RdsParameterGroup:
+    Type: "AWS::RDS::DBParameterGroup"
+    Properties:
+      Description: "Parameter groups for use with Aurora Instance."
+      Family: "aurora5.6"
+      Parameters:
+        sql_mode: IGNORE_SPACE
+        # デフォルトでは128MBしかないのでインスタンスサイズに応じて拡張する
+        innodb_buffer_pool_size: '{DBInstanceClassMemory*3/4}'
+
+  # サブネットグループの作成
+  RdsSubnetGroup:
+    Type: "AWS::RDS::DBSubnetGroup"
+    Properties: 
+      DBSubnetGroupDescription: "A group of multiple subnets on which to run an instance."
+      DBSubnetGroupName: !Sub "${ServiceName}-aurora-subnetgroup"
+      # ここで指定したサブネット上にインスタンスが起動する
+      SubnetIds: !Ref "RdsSubnetIDs"
+
+  # Writerインスタンスの作成
+  RDSDBInstanceWriter: 
+    Type: "AWS::RDS::DBInstance"
+    Properties: 
+      # 所属するRDSクラスター
+      DBClusterIdentifier: !Ref "RdsCluster"
+      DBInstanceClass: !Ref "RdsInstanceType"
+      # インスタンスのパラメータグループ
+      DBParameterGroupName: !Ref "RdsParameterGroup"
+      # 実行すrサブネットグループ
+      DBSubnetGroupName: !Ref "RdsSubnetGroup"
+      Engine: "aurora"
+      # VPC内からのアクセスが望ましいので外部公開を許可しないようにする
+      PubliclyAccessible: "false"
+
+  # Readerインスタンスの作成
+  RDSDBInstanceReader: 
+    Type: "AWS::RDS::DBInstance"
+    Properties: 
+      DBClusterIdentifier: !Ref "RdsCluster"
+      DBInstanceClass: !Ref "RdsInstanceType"
+      DBParameterGroupName: !Ref "RdsParameterGroup"
+      DBSubnetGroupName: !Ref "RdsSubnetGroup"
+      Engine: "aurora"
+      PubliclyAccessible: "false"
