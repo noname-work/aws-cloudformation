@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description:
-  "A template that runs Aurora in a clustered configuration."
+  "A template that runs Aurora in a cluster configuration."
 
 Parameters:
   ServiceName:
@@ -106,7 +106,7 @@ Resources:
       DBInstanceClass: !Ref "RdsInstanceType"
       # インスタンスのパラメータグループ
       DBParameterGroupName: !Ref "RdsParameterGroup"
-      # 実行すrサブネットグループ
+      # 実行するサブネットグループ
       DBSubnetGroupName: !Ref "RdsSubnetGroup"
       Engine: "aurora"
       # VPC内からのアクセスが望ましいので外部公開を許可しないようにする

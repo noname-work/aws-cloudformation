@@ -1,0 +1,102 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description:
+  "A template that runs DocumentDB in a cluster configuration."
+
+Parameters:
+  ServiceName:
+    Type: "String"
+    Description: "Name of the DocDB instance. Related services will be named in the same way."
+    Default: "db-server"
+  VPCID:
+    Type: "AWS::EC2::VPC::Id"
+    Description: "Select at your VPC."
+  DocSubnetIDs:
+    Type: "List<AWS::EC2::Subnet::Id>"
+    Description: "Select multiple subnets to set as SubnetGroup."
+  AccessSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup::Id"
+    Description: "Select a SecurityGroup that can connect to DocDB."
+  RootUserName:
+    Type: "String"
+    Description: "Name of the root user of the database."
+    Default: "root"
+  RootPassword:
+    Type: "String"
+    NoEcho: "true"
+    Description: "Password of the root user of the database."
+    Default: "password"
+  DocInstanceType:
+    Type: "String"
+    Description: "Allowed EC2 instance type."
+    Default: "db.t3.medium"
+    AllowedValues: [db.t3.medium, db.r5.large, db.r5.xlarge, db.r5.2xlarge, db.r5.4xlarge]
+    ConstraintDescription: "Please choose a valid instance type."
+
+Resources:
+  # セキュリティグループの作成
+  DocSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupName: !Sub "${ServiceName}-doc-sg"
+      GroupDescription: "Allow access from 27017 Port."
+      VpcId: !Ref "VPCID"
+      # MongoDB用に27017ポートを開放
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
+          FromPort: "27017"
+          ToPort: "27017"
+          SourceSecurityGroupId: !Ref "AccessSecurityGroup"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${ServiceName}-doc-sg"
+
+  # DocDBクラスターの作成
+  DocCluster: 
+    Type: "AWS::DocDB::DBCluster"
+    Properties:
+      DBClusterIdentifier: !Sub "${ServiceName}-cluster"
+      # クラスターに適用するパラメータグループを設定する
+      DBClusterParameterGroupName: !Ref "DocClusterParameterGroup"
+      # インスタンスを立てるサブネットを設定したグループ
+      DBSubnetGroupName: !Ref "DocSubnetGroup"
+      EngineVersion: "4.0.0"
+      # Rootユーザーの初期設定
+      MasterUsername: !Ref "RootUserName"
+      MasterUserPassword: !Ref "RootPassword"
+      # アタッチするセキュリティグループ
+      VpcSecurityGroupIds: 
+        - !Ref "DocSecurityGroup"
+
+  # クラスターのパラメータグループを作成
+  DocClusterParameterGroup: 
+    Type: "AWS::DocDB::DBClusterParameterGroup"
+    Properties: 
+      Description: "Parameter groups for use with DocDB Cluster."
+      Family: "docdb4.0"
+      Parameters: 
+        # 監査ログを有効にする
+        audit_logs: "enabled"
+
+  # サブネットグループの作成
+  DocSubnetGroup:
+    Type: "AWS::DocDB::DBSubnetGroup"
+    Properties: 
+      DBSubnetGroupDescription: "A group of multiple subnets on which to run an instance."
+      DBSubnetGroupName: !Sub "${ServiceName}-aurora-subnetgroup"
+      # ここで指定したサブネット上にインスタンスが起動する
+      SubnetIds: !Ref "DocSubnetIDs"
+
+  # Writerインスタンスの作成
+  DocDBDBInstanceWriter: 
+    Type: "AWS::DocDB::DBInstance"
+    Properties: 
+      # 所属するDocDBクラスター
+      DBClusterIdentifier: !Ref "DocCluster"
+      DBInstanceClass: !Ref "DocInstanceType"
+
+  # Readerインスタンスの作成
+  DocDBDBInstanceReader: 
+    Type: "AWS::DocDB::DBInstance"
+    Properties: 
+      DBClusterIdentifier: !Ref "DocCluster"
+      DBInstanceClass: !Ref "DocInstanceType"
