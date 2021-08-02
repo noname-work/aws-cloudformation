@@ -82,7 +82,7 @@ Resources:
     Type: "AWS::DocDB::DBSubnetGroup"
     Properties: 
       DBSubnetGroupDescription: "A group of multiple subnets on which to run an instance."
-      DBSubnetGroupName: !Sub "${ServiceName}-aurora-subnetgroup"
+      DBSubnetGroupName: !Sub "${ServiceName}-docdb-subnetgroup"
       # ここで指定したサブネット上にインスタンスが起動する
       SubnetIds: !Ref "DocSubnetIDs"
 
