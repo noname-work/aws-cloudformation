@@ -2,6 +2,24 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description:
   "This template will create a web server that only allows https."
 
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: EC2 setting
+        Parameters:
+          - ServiceName
+          - InstanceType
+          - VPCID
+          - KeyName
+          - EC2SubnetID
+          - InstanceImage
+      - Label:
+          default: ALB setting
+        Parameters:
+          - ALBSubnetIDs
+          - ALBCertificateARN
+
 Parameters:
   ServiceName:
     Type: "String"

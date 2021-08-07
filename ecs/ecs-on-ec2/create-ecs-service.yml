@@ -3,6 +3,18 @@ Description:
   "Create definitions for ECS services and tasks.
   You need to prepare a Service-Linked ecsServiceRole in advance."
 
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Parameters:
+          - ClusterName
+          - ServiceName
+          - DesiredServiceCount
+          - ImageURI
+          - ContainerPort
+          - ContainerName
+          - ServiceTargetGroup
+
 Parameters:
   ClusterName:
     Type: "String"

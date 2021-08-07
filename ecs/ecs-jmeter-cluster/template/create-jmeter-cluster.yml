@@ -2,6 +2,29 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description:
   "Built JMeter in a Master/Slave configuration running on Fargate."
 
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: ECS setting
+        Parameters:
+          - JmeterClusterName
+          - MasterServiceName
+          - SlaveServiceName
+      - Label:
+          default: Fargate setting
+        Parameters:
+          - FargateCPU
+          - FargateMemory
+          - DesiredSlaveCount
+          - VPCID
+          - ImageURI
+          - FargateSubnetIDs
+      - Label:
+          default: JMeter file setting
+        Parameters:
+          - JmxFileName
+
 Parameters:
   JmeterClusterName:
     Type: "String"

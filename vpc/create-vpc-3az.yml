@@ -3,6 +3,18 @@ Description:
   "Create a VPC and PublicSubnet and PrivateSubnet.
   These will be created in each of the 3 availability zones."
 
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Parameters:
+          - VPCCidrBlock
+          - PublicSubnetACidrBlock
+          - PublicSubnetCCidrBlock
+          - PublicSubnetDCidrBlock
+          - PrivateSubnetACidrBlock
+          - PrivateSubnetCCidrBlock
+          - PrivateSubnetDCidrBlock
+
 Parameters:
   VPCCidrBlock:
     Type: "String"

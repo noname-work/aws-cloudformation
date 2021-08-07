@@ -2,6 +2,16 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description:
   "Stop or start the resource at the specified time." 
 
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Parameters:
+          - LambdaName
+          - LambdaEcrUri
+          - EventTimeCron
+          - EnvTagName
+          - EnvTagValue
+
 Parameters:
   LambdaName:
     Type: "String"

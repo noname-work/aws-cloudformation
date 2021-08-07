@@ -3,6 +3,20 @@ Description:
   "Create an ECS cluster and the resources needed to run it.
   Specifically, ECS cluster, AutoScaling, Launchtemplate, and an IAM role."
 
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Parameters:
+          - ClusterName
+          - InstanceType
+          - ECSSubnetIDs
+          - KeyName
+          - ImageId
+          - ECSSecurityGroups
+          - ScalingDesiredCapacity
+          - ScalingMaxSize
+          - ScalingMinSize
+
 Parameters:
   ClusterName:
     Type: "String"

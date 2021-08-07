@@ -2,6 +2,26 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description:
   "A template that runs DocumentDB in a cluster configuration."
 
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Server setting
+        Parameters:
+          - ServiceName
+          - VPCID
+          - DocSubnetIDs
+          - AccessSecurityGroup
+      - Label:
+          default: Root user setting
+        Parameters:
+          - RootUserName
+          - RootPassword
+      - Label:
+          default: Instance Type
+        Parameters:
+          - DocInstanceType
+
 Parameters:
   ServiceName:
     Type: "String"

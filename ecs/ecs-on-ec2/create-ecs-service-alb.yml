@@ -2,6 +2,16 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description:
   "Create an ALB for use with ECS services."
 
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Parameters:
+          - ClusterName
+          - VPCID
+          - ALBSubnetIDs
+          - ALBCertificateARN
+          - ALBSecurityGroups
+
 Parameters:
   ClusterName:
     Type: "String"

@@ -2,6 +2,26 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description:
   "A template that runs Aurora in a cluster configuration."
 
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Server setting
+        Parameters:
+          - ServiceName
+          - VPCID
+          - RdsSubnetIDs
+          - AccessSecurityGroup
+      - Label:
+          default: Root user setting
+        Parameters:
+          - RootUserName
+          - RootPassword
+      - Label:
+          default: Instance Type
+        Parameters:
+          - RdsInstanceType
+
 Parameters:
   ServiceName:
     Type: "String"

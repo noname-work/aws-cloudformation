@@ -4,6 +4,20 @@ Description:
   For example, this can be useful to access other subnets that are VPC peering.
   It can also be useful for controlling browsing to certain websites, but 0.0.0.0/0 is prohibited."
 
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Subnet IDs
+        Parameters:
+          - SubnetID1
+          - SubnetID2
+      - Label:
+          default: AccessRange
+        Parameters:
+          - AccessRange1
+          - AccessRange2
+
 Parameters:
   SubnetID1:
     Type: "AWS::EC2::Subnet::Id"
@@ -11,11 +25,11 @@ Parameters:
   SubnetID2:
     Type: "AWS::EC2::Subnet::Id"
     Description: "Select at private subnet in your selected VPC."
-  AccessRage1:
+  AccessRange1:
     Type: "String"
     Description: "Range of routes to be accessed from the VPN. (SubnetID1)"
     Default: "172.17.0.0/16"
-  AccessRage2:
+  AccessRange2:
     Type: "String"
     Description: "Range of routes to be accessed from the VPN. (SubnetID2)"
     Default: "172.17.0.0/16"
@@ -31,7 +45,7 @@ Resources:
       TargetVpcSubnetId: 
         Ref: "SubnetID1"
       # 向き先のCIDRブロックを指定
-      DestinationCidrBlock: !Ref "AccessRage1"
+      DestinationCidrBlock: !Ref "AccessRange1"
       Description: "SubnetID1 Access Route Table."
   RangeAccessRoute2:
     Type: "AWS::EC2::ClientVpnRoute"
@@ -39,5 +53,5 @@ Resources:
       ClientVpnEndpointId: !ImportValue "ClientVpnEndpoint"
       TargetVpcSubnetId: 
         Ref: "SubnetID2"
-      DestinationCidrBlock: !Ref "AccessRage2"
+      DestinationCidrBlock: !Ref "AccessRange2"
       Description: "SubnetID2 Access Route Table."

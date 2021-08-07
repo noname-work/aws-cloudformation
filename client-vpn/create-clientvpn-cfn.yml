@@ -3,6 +3,26 @@ Description:
   "This is a template of how to start ClientVPN from the official AWS documentation.
   https://docs.aws.amazon.com/ja_jp/vpn/latest/clientvpn-admin/cvpn-getting-started.html"
 
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: ClientVPN Certificate Setting
+        Parameters:
+          - ServerCertificateARN
+          - ClientCertificateARN
+      - Label:
+          default: CIDR
+        Parameters:
+          - ClientCIDR
+      - Label:
+          default: VPC & Subnets
+        Parameters:
+          - ClientCIDR
+          - VPCID
+          - SubnetID1
+          - SubnetID2
+
 Parameters:
   ServerCertificateARN:
     Type: "String"

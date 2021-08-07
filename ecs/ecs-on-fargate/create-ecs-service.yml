@@ -3,6 +3,20 @@ Description:
   "Create definitions for ECS services and Fargate tasks.
   You need to prepare a Service-Linked ecsServiceRole in advance."
 
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Parameters:
+          - ClusterName
+          - ServiceName
+          - DesiredServiceCount
+          - ImageURI
+          - ContainerPort
+          - ContainerName
+          - ServiceTargetGroup
+          - FargateSubnetIDs
+          - ECSSecurityGroups
+
 Parameters:
   ClusterName:
     Type: "String"
