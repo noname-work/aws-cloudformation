@@ -17,7 +17,7 @@ RUN mkdir /files
 WORKDIR /files
 
 # シナリオファイルと実行シェルの追加
-ADD jmx .
+ADD jmx ./jmx
 ADD master.sh .
 ADD slave.sh .
 RUN chmod +x -R /files
