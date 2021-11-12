@@ -170,7 +170,7 @@ Resources:
             - Name: "MASTER_SERVICE_NAME"
               Value: !Ref "MasterServiceName"
           # コンテナ実行コマンドを上書き
-          command: ["/files/master.sh",!Sub "${JmxFileName}"]
+          command: ["sh","master.sh",!Sub "${JmxFileName}"]
           # CloudWatchLogsにログを出力
           LogConfiguration:
             LogDriver: "awslogs"

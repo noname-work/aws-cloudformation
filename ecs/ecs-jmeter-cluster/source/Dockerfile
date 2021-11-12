@@ -13,13 +13,11 @@ RUN mkdir /jmeter && cd /jmeter \
     && tar -xf apache-jmeter-5.4.tgz
 
 # 作業ディレクトリの作成
-RUN mkdir /files
 WORKDIR /files
 
 # シナリオファイルと実行シェルの追加
 ADD jmx ./jmx
 ADD master.sh .
 ADD slave.sh .
-RUN chmod +x -R /files
 
-CMD ["/files/slave.sh"]
+CMD ["sh","slave.sh"]
