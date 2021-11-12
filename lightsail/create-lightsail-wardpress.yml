@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description:
+  "Launch a VPS instance of lightsail.
+  Lightsail is available for almost a flat rate."
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Parameters:
+          - InstanceName
+          - InstanceType
+          - ImageType
+          - AvailabilityZone
+
+Parameters:
+  InstanceName:
+    Type: "String"
+    Description: "Enter the name of your lightsail instance."
+    Default: "lightsail-server"
+  InstanceType:
+    Type: "String"
+    Description: "Allowed Lightsail instance type."
+    Default: "nano_2_0"
+    AllowedValues: [nano_2_0, micro_2_0, small_2_0, medium_2_0, large_2_0, xlarge_2_0, 2xlarge_2_0]
+    ConstraintDescription: "Please choose a valid instance type."
+  ImageType:
+    Type: "String"
+    Description: "Allowed Lightsail Images."
+    Default: "amazon_linux_2"
+    AllowedValues: [amazon_linux_2, amazon_linux, ubuntu_20_04, ubuntu_18_04, debian_10, lamp_7, wordpress]
+    ConstraintDescription: "Please choose a valid OS image type."
+  AvailabilityZone:
+    Type: "String"
+    Description: "Select the AZ where you want to run the instance."
+    Default: "ap-northeast-1a"
+    AllowedValues: [ap-northeast-1a, ap-northeast-1c, ap-northeast-1d]
+
+Resources:
+  # Lightsailインスタンスの作成
+  LightsailInstance:
+    Type: "AWS::Lightsail::Instance"
+    Properties:
+      # インスタンスを実行するAZ
+      AvailabilityZone: !Ref "AvailabilityZone"
+      # 自動スナップショットの作成を有効にする
+      AddOns:
+        - AddOnType: "AutoSnapshot"
+          # デフォルトでは有効にしておく
+          Status: "Enabled"
+      # 立ち上げるOSイメージ
+      BlueprintId: !Ref "ImageType"
+      # インスタンスのサイズ
+      BundleId: !Ref "InstanceType"
+      # インスタンスの名前
+      InstanceName: !Ref "InstanceName"
+
+      ## Lightsailのファイアウォール設定。 必要に応じて更新してください。
+      ## ポートとIPアドレスから許可リストを作成
+      ## https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-lightsail-instance-port.html
+      #Port:
+      #  AccessDirection: String
+      #  AccessFrom: String
+      #  AccessType: String
+      #  CidrListAliases: 
+      #    - String
+      #  Cidrs: 
+      #    - String
+      #  CommonName: String
+      #  FromPort: Integer
+      #  Ipv6Cidrs: 
+      #    - String
+      #  Protocol: String
+      #  ToPort: Integer
