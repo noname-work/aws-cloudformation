@@ -72,7 +72,7 @@ ECSのサービスで利用するロードバランサーのターゲットグ�
 | ScalingMinSize | ECSインスタンスの最小数 |
 
 
-## create-ecs-on-ec2-cluster.ymlのパラメータ
+## create-ecs-on-spot-ec2-cluster.ymlのパラメータ
 | Parameter | Description |
 |:---|:---|
 | ClusterName | 作成予定のECSクラスター名を入力 |
