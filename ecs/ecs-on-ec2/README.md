@@ -13,7 +13,12 @@ EC2とロードバランサーで利用するセキュリティグループを�
 
 **create-ecs-on-ec2-cluster.yml:**<br>
 ECSクラスターとAutoScalingを作成するテンプレート。<br>
+全てのインスタンスはオンデマンドで実行される。<br>
 インスタンスにアタッチするためのIAMロールも構築している。
+
+**create-ecs-on-spot-ec2-cluster.yml:**<br>
+ECSクラスターとAutoScalingを作成するテンプレート。<br>
+オンデマンドとスポットインスタンスの混在したクラスターが実行される。<br>
 
 **create-ecs-service-alb.yml:**<br>
 ECSのサービスで利用するロードバランサーとターゲットグループを作成するテンプレート。
@@ -34,7 +39,7 @@ ECSのサービスで利用するロードバランサーのターゲットグ�
 ## 構築の流れ
 1, 必要であればcreate-ecr-repo.ymlテンプレートでECRリポジトリを作成する<br>
 2, create-ecs-securitygroup.ymlテンプレートでセキュリティグループを作成する<br>
-3, create-ecs-on-ec2-cluster.ymlテンプレートでECSクラスターと必要リソースを作成する<br>
+3, create-ecs-on-(spot-)ec2-cluster.ymlテンプレートでECSクラスターと必要リソースを作成する<br>
 4, create-ecs-service-alb.ymlテンプレートでロードバランサーとターゲットグループを作成する<br>
 5, create-ecs-service.ymlテンプレートでタスク定義とサービスを作成する
 
@@ -66,6 +71,21 @@ ECSのサービスで利用するロードバランサーのターゲットグ�
 | ScalingMaxSize | ECSインスタンスの最大数 |
 | ScalingMinSize | ECSインスタンスの最小数 |
 
+
+## create-ecs-on-ec2-cluster.ymlのパラメータ
+| Parameter | Description |
+|:---|:---|
+| ClusterName | 作成予定のECSクラスター名を入力 |
+| InstanceType1 | 優先的に実行するインスタンスタイプを選択 |
+| InstanceType2 | 予備のインスタンスタイプを選択 |
+| ECSSubnetIDs | ECSインスタンスを立てるサブネットを選択 |
+| KeyName | ECSインスタンスに接続するためのキーペアを選択 |
+| ImageId | ECSに最適化されたAMIのIDを入力 |
+| ECSSecurityGroups | ECSインスタンスにアタッチするセキュリティグループを選択 |
+| OnDemandInstancePercentage | オンデマンドインスタンスの割合。0にしても最低1台は実行 |
+| ScalingDesiredCapacity | ECSインスタンスの希望数 |
+| ScalingMaxSize | ECSインスタンスの最大数 |
+| ScalingMinSize | ECSインスタンスの最小数 |
 
 
 ## create-ecs-service-alb.ymlのパラメータ

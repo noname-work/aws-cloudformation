@@ -1,28 +1,38 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description:
   "Create an ECS cluster and the resources needed to run it.
-  Specifically, On-demand only ECS cluster, AutoScaling, Launchtemplate, and an IAM role."
+  Specifically, Mixed Spot-Instances ECS cluster, AutoScaling, Launchtemplate, and an IAM role."
 
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
-      - Parameters:
+      - Label:
+          default: ECS Cluster Setting
+        Parameters:
           - ClusterName
-          - InstanceType
+          - InstanceType1
+          - InstanceType2
           - ECSSubnetIDs
           - KeyName
           - ImageId
           - ECSSecurityGroups
-          - ScalingDesiredCapacity
-          - ScalingMaxSize
-          - ScalingMinSize
 
 Parameters:
   ClusterName:
     Type: "String"
     Description: "Enter the name of the ECS Cluster."
     Default: "sample-ecs-cluster"
-  InstanceType:
+  InstanceType1:
+    Type: "String"
+    Description: "Allowed EC2 instance type."
+    AllowedValues: [t2.nano, t2.micro, t2.small, t2.medium, t2.large, t2.xlarge, t2.2xlarge,
+      t3.nano, t3.micro, t3.small, t3.medium, t3.large, t3.xlarge, t3.2xlarge,
+      m4.large, m4.xlarge, m4.2xlarge, m4.4xlarge,
+      m5.large, m5.xlarge, m5.2xlarge, m5.4xlarge,
+      c3.large, c3.xlarge, c3.2xlarge, c3.4xlarge,
+      c4.large, c4.xlarge, c4.2xlarge, c4.4xlarge,
+      c5.large, c5.xlarge, c5.2xlarge, c5.4xlarge]
+  InstanceType2:
     Type: "String"
     Description: "Allowed EC2 instance type."
     AllowedValues: [t2.nano, t2.micro, t2.small, t2.medium, t2.large, t2.xlarge, t2.2xlarge,
@@ -57,6 +67,10 @@ Parameters:
     Type: "Number"
     Description: "Minimum number of host instances for ECS clusters."
     Default: "1"
+  OnDemandInstancePercentage:
+    Type: "Number"
+    Description: "Ratio of on-demand instances."
+    Default: "50"
 
 Resources:
   # ECSクラスターの作成
@@ -95,8 +109,23 @@ Resources:
       # インスタンスの最小数
       MinSize: !Ref "ScalingMinSize"
       # インスタンスの起動設定
-      LaunchConfigurationName: !Ref "LaunchConfiguration"
-      # インスタンスを停止する時のルール
+      MixedInstancesPolicy:
+        InstancesDistribution:
+          # オンデマンドインスタンスを最低1台実行
+          OnDemandBaseCapacity: "1"
+          # インスタンスを追加するときにオンデマンドを起動する割合
+          OnDemandPercentageAboveBaseCapacity: !Ref "OnDemandInstancePercentage"
+        LaunchTemplate:
+          # 起動テンプレートの設定
+          LaunchTemplateSpecification:
+            # テンプレートIDを指定
+            LaunchTemplateId: !Ref "LaunchTemplate"
+            # テンプレートのバージョン番号を取得して指定
+            Version: !GetAtt "LaunchTemplate.LatestVersionNumber"
+          Overrides:
+            - InstanceType: !Ref "InstanceType1"
+            - InstanceType: !Ref "InstanceType2"
+      # スケールインの際に古いインスタンスから順に削除
       TerminationPolicies: 
         - "OldestInstance"
       VPCZoneIdentifier: !Ref "ECSSubnetIDs"
@@ -105,36 +134,38 @@ Resources:
           Value: !Sub "${ClusterName}-ecs-instance"
           PropagateAtLaunch: "true"
 
-  # AutoScaling起動設定の作成
-  LaunchConfiguration:
-    Type: "AWS::AutoScaling::LaunchConfiguration"
-    Properties: 
-      # 自動にパブリックIPを割り当てるかどうか
-      AssociatePublicIpAddress: true
-      BlockDeviceMappings: 
-        - DeviceName: "/dev/xvda"
-          Ebs: 
-            VolumeType: "gp3"
-            VolumeSize: "30"
-      # EBSをスループット最適化モードにするか
-      EbsOptimized: "false"
-      # ECSにアタッチするインスタンスプロファイル
-      IamInstanceProfile: !Ref "EcsInstanceProfile"
-      # 実行するAMI
-      ImageId: !Ref "ImageId"
-      # 詳細メトリクスを有効にするか
-      InstanceMonitoring: "false"
-      # インスタンスタイプ
-      InstanceType: !Ref "InstanceType"
-      # EC2インスタンスのキーペア
-      KeyName: !Ref "KeyName"
-      # EC2に紐づけるセキュリティグループ
-      SecurityGroups: !Ref "ECSSecurityGroups"
-      # ECSクラスターに紐づけるためのユーザーデータ
-      UserData: 
-        Fn::Base64: !Sub |
-          #!/bin/bash
-          echo "ECS_CLUSTER=${ClusterName}" >> /etc/ecs/ecs.config
+  LaunchTemplate:
+    Type: "AWS::EC2::LaunchTemplate"
+    Properties:
+      LaunchTemplateName: !Sub "${ClusterName}-lt"
+      LaunchTemplateData:
+        # 実行するAMI
+        ImageId: !Ref "ImageId"
+        # インスタンスタイプ
+        InstanceType: !Ref "InstanceType1"
+        # ECS用のインスタンスプロファイルをアタッチ
+        IamInstanceProfile: 
+          Name: !Ref "EcsInstanceProfile"
+        # EBSデバイスの設定
+        BlockDeviceMappings: 
+          - DeviceName: "/dev/xvda"
+            Ebs: 
+              VolumeType: "gp3"
+              VolumeSize: "30"
+        # EBSをスループット最適化モードにするか
+        EbsOptimized: "false"
+
+        # EC2インスタンスのキーペア
+        KeyName: !Ref "KeyName"
+        # EC2に紐づけるセキュリティグループ
+        SecurityGroupIds: !Ref "ECSSecurityGroups"
+
+        # ECSクラスターに紐づけるためのユーザーデータ
+        UserData: 
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            echo "ECS_CLUSTER=${ClusterName}" >> /etc/ecs/ecs.config
+            ECS_ENABLE_SPOT_INSTANCE_DRAINING=true
 
   # ECSで利用するためのロールを作成
   EcsInstanceRole:
