@@ -134,6 +134,7 @@ Resources:
           Value: !Sub "${ClusterName}-ecs-instance"
           PropagateAtLaunch: "true"
 
+  # 起動テンプレートの作成
   LaunchTemplate:
     Type: "AWS::EC2::LaunchTemplate"
     Properties:
@@ -154,12 +155,10 @@ Resources:
               VolumeSize: "30"
         # EBSをスループット最適化モードにするか
         EbsOptimized: "false"
-
         # EC2インスタンスのキーペア
         KeyName: !Ref "KeyName"
         # EC2に紐づけるセキュリティグループ
         SecurityGroupIds: !Ref "ECSSecurityGroups"
-
         # ECSクラスターに紐づけるためのユーザーデータ
         UserData: 
           Fn::Base64: !Sub |
