@@ -1,0 +1,193 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description:
+  "Create an AutoScaling that automatically assigns sequential numbers to names."
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: AutoScaling Setting
+        Parameters:
+          - InstanceType1
+          - InstanceType2
+          - EC2SubnetIDs
+          - KeyName
+          - ImageId
+          - EC2SecurityGroups
+
+Parameters:
+  InstanceName:
+    Type: "String"
+    Description: "Enter the name of the EC2 Instance."
+    Default: "sample"
+  InstanceType1:
+    Type: "String"
+    Description: "Allowed EC2 instance type."
+    AllowedValues: [t2.nano, t2.micro, t2.small, t2.medium, t2.large, t2.xlarge, t2.2xlarge,
+      t3.nano, t3.micro, t3.small, t3.medium, t3.large, t3.xlarge, t3.2xlarge,
+      m4.large, m4.xlarge, m4.2xlarge, m4.4xlarge,
+      m5.large, m5.xlarge, m5.2xlarge, m5.4xlarge,
+      c3.large, c3.xlarge, c3.2xlarge, c3.4xlarge,
+      c4.large, c4.xlarge, c4.2xlarge, c4.4xlarge,
+      c5.large, c5.xlarge, c5.2xlarge, c5.4xlarge]
+  InstanceType2:
+    Type: "String"
+    Description: "Allowed EC2 instance type."
+    AllowedValues: [t2.nano, t2.micro, t2.small, t2.medium, t2.large, t2.xlarge, t2.2xlarge,
+      t3.nano, t3.micro, t3.small, t3.medium, t3.large, t3.xlarge, t3.2xlarge,
+      m4.large, m4.xlarge, m4.2xlarge, m4.4xlarge,
+      m5.large, m5.xlarge, m5.2xlarge, m5.4xlarge,
+      c3.large, c3.xlarge, c3.2xlarge, c3.4xlarge,
+      c4.large, c4.xlarge, c4.2xlarge, c4.4xlarge,
+      c5.large, c5.xlarge, c5.2xlarge, c5.4xlarge]
+  EC2SubnetIDs:
+    Type: "List<AWS::EC2::Subnet::Id>"
+    Description: "Specify one or more availabilityzones in which to run host instances."
+  KeyName:
+    Type: "AWS::EC2::KeyPair::KeyName"
+    Description: "Select at your EC2 KeyPair."
+  ImageId:
+    Type: "String"
+    Description: "Enter the AMI of EC2."
+    Default: "ami-0ecb2a61303230c9d"
+  EC2SecurityGroups:
+    Type: "List<AWS::EC2::SecurityGroup::Id>"
+    Description: "Select the security group to be used for the EC2."
+  ScalingDesiredCapacity:
+    Type: "Number"
+    Description: "Desired number of instances for EC2."
+    Default: "1"
+  ScalingMaxSize:
+    Type: "Number"
+    Description: "Maximum number of instances for EC2."
+    Default: "3"
+  ScalingMinSize:
+    Type: "Number"
+    Description: "Minimum number of instances for EC2."
+    Default: "1"
+  OnDemandInstancePercentage:
+    Type: "Number"
+    Description: "Ratio of on-demand instances."
+    Default: "100"
+
+Resources:
+  # AutoScalingグループの作成
+  AutoScaling:
+    Type: "AWS::AutoScaling::AutoScalingGroup"
+    # インスタンス更新時のアップデート設定
+    UpdatePolicy:
+      # ローリングアップデートの設定
+      AutoScalingRollingUpdate:
+        # 1台ずつ変更
+        MaxBatchSize: "1"
+        # アップデート中に最低でも1台はインスタンスが起動するようにする
+        MinInstancesInService: "1"
+    Properties: 
+      AutoScalingGroupName: !Sub "${InstanceName}-asg"
+      # 次のスケーリングアクションまでの待機時間
+      Cooldown: "300"
+      # 実行するインスタンスの希望数
+      DesiredCapacity: !Ref "ScalingDesiredCapacity"
+      # インスタンスの最大数
+      MaxSize: !Ref "ScalingMaxSize"
+      # インスタンスの最小数
+      MinSize: !Ref "ScalingMinSize"
+      # インスタンスの起動設定
+      MixedInstancesPolicy:
+        InstancesDistribution:
+          # オンデマンドインスタンスを最低1台実行
+          OnDemandBaseCapacity: "1"
+          # インスタンスを追加するときにオンデマンドを起動する割合
+          OnDemandPercentageAboveBaseCapacity: !Ref "OnDemandInstancePercentage"
+        LaunchTemplate:
+          # 起動テンプレートの設定
+          LaunchTemplateSpecification:
+            # テンプレートIDを指定
+            LaunchTemplateId: !Ref "LaunchTemplate"
+            # テンプレートのバージョン番号を取得して指定
+            Version: !GetAtt "LaunchTemplate.LatestVersionNumber"
+          Overrides:
+            - InstanceType: !Ref "InstanceType1"
+            - InstanceType: !Ref "InstanceType2"
+      # スケールインの際に新しいインスタンスから順に削除
+      TerminationPolicies: 
+        - "NewestInstance"
+      VPCZoneIdentifier: !Ref "EC2SubnetIDs"
+      Tags: 
+        - Key: "Name"
+          Value: !Sub "${InstanceName}-00"
+          PropagateAtLaunch: "true"
+
+  # 起動テンプレートの作成
+  LaunchTemplate:
+    Type: "AWS::EC2::LaunchTemplate"
+    Properties:
+      LaunchTemplateName: !Sub "${InstanceName}-lt"
+      LaunchTemplateData:
+        # 実行するAMI
+        ImageId: !Ref "ImageId"
+        # インスタンスタイプ
+        InstanceType: !Ref "InstanceType1"
+        # EC2用のインスタンスプロファイルをアタッチ
+        IamInstanceProfile: 
+          Name: !Ref "EC2InstanceProfile"
+        # EBSデバイスの設定
+        BlockDeviceMappings: 
+          - DeviceName: "/dev/xvda"
+            Ebs: 
+              VolumeType: "gp3"
+              VolumeSize: "30"
+        # EBSをスループット最適化モードにするか
+        EbsOptimized: "false"
+        # EC2インスタンスのキーペア
+        KeyName: !Ref "KeyName"
+        # EC2に紐づけるセキュリティグループ
+        SecurityGroupIds: !Ref "EC2SecurityGroups"
+        # EC2クラスターに紐づけるためのユーザーデータ
+        UserData: 
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            yum update -y
+            yum install -y awscli
+            sleep $(($RANDOM % 120))
+            TAG_LIST=`aws ec2 describe-instances --filters Name=instance-state-code,Values=16 Name=tag:aws:autoscaling:groupName,Values=${InstanceName}-asg --region ${AWS::Region} | grep ${InstanceName} | sed -r 's/^\s*.*${InstanceName}-([0-9]*).*$/\1/'`
+            INSTANCE_ID=`curl 169.254.169.254/latest/meta-data/instance-id/`
+            for num in {01..${ScalingMaxSize}};do if [[ ! `echo ${!TAG_LIST} | grep -e ${!num}` ]]; then aws ec2 create-tags --resources ${!INSTANCE_ID} --tags Key=Name,Value=${InstanceName}-${!num} --region ${AWS::Region}; break ;fi ;done
+
+  # EC2で利用するためのロールを作成
+  EC2InstanceRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub "${InstanceName}-instance-role"
+      Policies:
+        - PolicyName: !Sub "${InstanceName}-instance-policy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                # EC2一覧取得権限とタグ作成権限を追加
+                Action:
+                  - "ec2:Describe*"
+                  - "ec2:CreateTags"
+                Resource: "*"
+      # EC2の基本的なポリシーとSSMを利用するためのポリシーをアタッチ
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "ec2.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+
+  # インスタンスプロファイルの作成
+  EC2InstanceProfile:
+    Type: "AWS::IAM::InstanceProfile"
+    Properties:
+      Path: "/"
+      Roles:
+        - !Ref "EC2InstanceRole"
+      InstanceProfileName: !Sub "${InstanceName}-instance-role"
