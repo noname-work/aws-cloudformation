@@ -47,3 +47,4 @@
 ***
 # 参考URL
 - [[AWS] ALB + EC2でWebサーバを構築するCloudFormationを構築してみた](https://noname.work/2993.html)
+- [[AWS] EC2インスタンスに自動的に連番をつけるAutoScalingグループを作る](https://noname.work/3808.html)
